@@ -1,6 +1,7 @@
 package tamago
 
 import (
+	"math"
 	"strconv"
 )
 
@@ -26,6 +27,22 @@ type Register struct {
 	SP, PC                 uint16
 }
 
+func (r *Register) setZeroIfNeeded(reg *uint) {
+	if *reg == 0 {
+		r.Setf(Flag.Zero)
+	} else {
+		r.Clearf(Flag.Zero)
+	}
+}
+
+func (r *Register) setHalfCarryIfNeeded(reg *uint, value uint) {
+	if ((*reg & 0x0f) + (value & 0x0f)) > 0x0f {
+		r.Setf(Flag.HalfCarry)
+	} else {
+		r.Clearf(Flag.HalfCarry)
+	}
+}
+
 // Set a flag
 func (r *Register) Setf(flag uint8) {
 	validify(flag)
@@ -38,14 +55,6 @@ func (r *Register) Clearf(flag uint8) {
 	validify(flag)
 
 	r.F &^= flag
-}
-
-func (r *Register) setZeroIfNeeded(reg *uint8) {
-	if *reg == 0 {
-		r.Setf(Flag.Zero)
-	} else {
-		r.Clearf(Flag.Zero)
-	}
 }
 
 func (r *Register) Increment(reg *uint8) {
@@ -76,17 +85,45 @@ func (r *Register) Decrement(reg *uint8) {
 }
 
 func (r *Register) Add(reg *uint8, value uint8) {
-	result := uint16(*reg) + uint16(value)
+	fullReg := uint(*reg)
+	fullValue := uint(value)
 
-	if (result & 0xff00) != 0 {
-		// overflow above 0xff
+	result := fullReg + fullValue
+
+	if result > math.MaxUint8 {
+		// overflow, keep only the lower 8 bits
 		r.Setf(Flag.Carry)
+		result = uint8(result & math.MaxUint8)
+
+	} else {
+		r.Clearf(Flag.Carry)
 	}
 
-	// truncate all bits above 0xff
-	*reg = uint8(result & 0xff)
+	*reg = result
 
 	r.setZeroIfNeeded(reg)
+	r.setHalfCarryIfNeeded(fullReg, fullValue)
+	r.Clearf(Flag.Negative)
+}
+
+func (r *Register) AddShort(reg *uint16, value uint16) {
+	fullReg := uint(*reg)
+	fullValue := uint(value)
+
+	result := fullReg + fullValue
+
+	if result > math.MaxUint16 {
+		// overflow, keep only the lower 16 bits
+		r.Setf(Flag.Carry)
+		result = uint16(result & math.MaxUint16)
+
+	} else {
+		r.Clearf(Flag.Carry)
+	}
+
+	*reg = result
+
+	r.setHalfCarryIfNeeded(reg, value)
 	r.Clearf(Flag.Negative)
 }
 
@@ -121,5 +158,3 @@ func (r *Register) HL() uint16 {
 func (r *Register) SetHL(value uint16) {
 	setShort(&r.L, &r.H, value)
 }
-
-func (r *Register) increment(reg *uint8) {}

@@ -79,7 +79,9 @@ var Table = [256]Instruction{
 
 			if carry != 0 {
 				// carry is now 0b1, so set the carry flag
-				cpu.SetFlag(CarryFlag)
+				cpu.Setf(Flag.Carry)
+			} else {
+				cpu.Clearf(Flag.Carry)
 			}
 
 			// Shift A left 1 bit and add back the carry.
@@ -103,50 +105,84 @@ var Table = [256]Instruction{
 	{
 		"ADD HL,BC", 0, 8,
 		func(cpu *CPU, value interface{}) {
-			cpu.reg.SetHL(cpu.reg.BC() + cpu.reg.HL())
+			hl := cpu.reg.HL()
+			cpu.reg.AddShort(&hl, cpu.reg.BC())
+
+			cpu.reg.SetHL(hl)
 		},
 	},
 
 	// 0xa
 	{
 		"LD A,(BC)", 0, 8,
-		func(cpu *CPU, value interface{}) {},
+		func(cpu *CPU, value interface{}) {
+			cpu.reg.A = cpu.Read(value.(uint8))
+		},
 	},
 
 	// 0xb
 	{
 		"DEC BC", 0, 8,
-		func(cpu *CPU, value interface{}) {},
+		func(cpu *CPU, value interface{}) {
+			cpu.reg.SetBC(cpu.reg.BC() - 1)
+		},
 	},
 
 	// 0xc
 	{
 		"INC C", 0, 4,
-		func(cpu *CPU, value interface{}) {},
+		func(cpu *CPU, value interface{}) {
+			cpu.reg.Increment(&cpu.reg.C)
+		},
 	},
 
 	// 0xd
 	{
 		"DEC C", 0, 4,
-		func(cpu *CPU, value interface{}) {},
+		func(cpu *CPU, value interface{}) {
+			cpu.reg.Decrement(&cpu.reg.C)
+		},
 	},
 
 	// 0xe
 	{
 		"LD C,u8", 1, 8,
-		func(cpu *CPU, value interface{}) {},
+		func(cpu *CPU, value interface{}) {
+			cpu.reg.C = value.(uint8)
+		},
 	},
 
 	// 0xf
 	{
 		"RRCA", 0, 4,
-		func(cpu *CPU, value interface{}) {},
+		func(cpu *CPU, value interface{}) {
+			// Take only the last bit
+			carry := cpu.reg.A & 0x01
+
+			if carry != 0 {
+				// carry is now 0b1, so set the carry flag
+				cpu.Setf(Flag.Carry)
+			} else {
+				cpu.Clearf(Flag.Carry)
+			}
+
+			// Shift A right 1 bit and put back the bits.
+			cpu.reg.A >>= 1
+			if carry != 0 {
+				cpu.reg.A |= 0x80
+			}
+
+			// Clear all other flags.
+			cpu.ClearFlag(Flag.HalfCarryFlag | Flag.Negative | Flag.Zero)
+		},
 	},
 
 	// 0x10
 	{
 		"STOP", 1, 4,
-		func(cpu *CPU, value interface{}) {},
+		func(cpu *CPU, value interface{}) {
+			cpu.stopped = true
+		},
 	},
 
 	// 0x11
