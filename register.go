@@ -43,7 +43,14 @@ func (r *Register) setHalfCarryIfNeeded(reg *uint, value uint) {
 	}
 }
 
-// Set a flag
+// Check if flag is set.
+func (r *Register) Hasf(flag uint8) bool {
+	validify(flag)
+
+	return (r.F & flag) != 0
+}
+
+// Set a flag.
 func (r *Register) Setf(flag uint8) {
 	validify(flag)
 
@@ -55,6 +62,13 @@ func (r *Register) Clearf(flag uint8) {
 	validify(flag)
 
 	r.F &^= flag
+}
+
+// Clear all flags except for the flag passed.
+func (r *Register) ClearAllExceptf(flag uint8) {
+	validify(flag)
+
+	r.F = flag
 }
 
 func (r *Register) Increment(reg *uint8) {
