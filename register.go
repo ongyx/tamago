@@ -1,174 +1,120 @@
 package tamago
 
-import (
-	"math"
-	"strconv"
-)
+import "math"
 
-var Flag = struct {
-	Carry, HalfCarry, Negative, Zero uint8
-}{
-	1 << 4,
-	1 << 5,
-	1 << 6,
-	1 << 7,
-}
-
-func validify(flag uint8) {
-	switch flag {
-	case Flag.Carry, Flag.HalfCarry, Flag.Negative, Flag.Zero:
-	default:
-		panic("invalid flag " + strconv.Itoa(flag))
-	}
-}
-
+// The Game Boy has six 16-bit registers (AF, BC, DE, HL, SP, PC),
+// of which the first four can be written to as general-purpose registers.
+// They can be used seperately as eight 8-bit registers (A, B, C, D, E, F, H, L).
+//
+// NOTE:
+// Even though the register is named AF, BC, etc.,
+// the low byte is the second 8-bit register (i.e C) while the high byte is the first 8-bit register (i.e B).
 type Register struct {
-	A, B, C, D, E, F, H, L uint8
-	SP, PC                 uint16
+	High, Low uint8
 }
 
-func (r *Register) setZeroIfNeeded(reg *uint) {
-	if *reg == 0 {
-		r.Setf(Flag.Zero)
-	} else {
-		r.Clearf(Flag.Zero)
-	}
+// Get the register as an unsigned 16-bit int.
+func (r *Register) Value() uint16 {
+	return Endian.Uint16([]uint8{r.Low, r.High})
 }
 
-func (r *Register) setHalfCarryIfNeeded(reg *uint, value uint) {
-	if ((*reg & 0x0f) + (value & 0x0f)) > 0x0f {
-		r.Setf(Flag.HalfCarry)
-	} else {
-		r.Clearf(Flag.HalfCarry)
-	}
+// Set the register with an unsigned 16-bit int.
+func (r *Register) SetValue(v uint16) {
+	buf := []uint8{}
+	Endian.PutUint16(buf, v)
+
+	r.Low = buf[0]
+	r.High = buf[1]
 }
 
-// Check if flag is set.
-func (r *Register) Hasf(flag uint8) bool {
-	validify(flag)
-
-	return (r.F & flag) != 0
+// Increment the register.
+func (r *Register) Increment() {
+	r.SetValue(r.Value() + 1)
 }
 
-// Set a flag.
-func (r *Register) Setf(flag uint8) {
-	validify(flag)
-
-	r.F |= flag
+// Decrement the register.
+func (r *Register) Decrement() {
+	r.SetValue(r.Value() - 1)
 }
 
-// Clear a flag.
-func (r *Register) Clearf(flag uint8) {
-	validify(flag)
+// Add a value to the register and set flags as necessary.
+func (r *Register) Add(v uint16, flags *Flags) {
+	original := uint(r.Value())
+	value := uint(v)
+	result := original + value
 
-	r.F &^= flag
+	// The result of the bit clear will be more than 1 if there is overflow.
+	flags.setIfCarry(result &^ math.MaxUint16)
+
+	// Truncate any overflow.
+	r.SetValue(uint16(result & math.MaxUint16))
+
+	flags.setIfHalfCarry(original, value)
+	flags.Clear(Negative)
 }
 
-// Clear all flags except for the flag passed.
-func (r *Register) ClearAllExceptf(flag uint8) {
-	validify(flag)
+// Increment the low byte and set flags as necessary.
+func (r *Register) IncrementLow(flags *Flags) {
 
-	r.F = flag
-}
-
-func (r *Register) Increment(reg *uint8) {
-	if (*reg & 0x0f) == 0x0f {
+	if (r.Low & 0x0f) == 0x0f {
 		// third bit is about to be carried over to fourth bit
-		r.Setf(Flag.HalfCarry)
+		flags.Set(HalfCarry)
 	} else {
-		r.Clearf(Flag.HalfCarry)
+		flags.Clear(HalfCarry)
 	}
 
-	*reg++
+	r.Low++
 
-	r.setZeroIfNeeded(reg)
-	r.Clearf(Flag.Negative)
+	flags.setIfZero(r.Low)
+	flags.Clear(Negative)
+
 }
 
-func (r *Register) Decrement(reg *uint8) {
+// Increment the low byte and set flags as necessary.
+func (r *Register) DecrementLow(flags *Flags) {
+
 	if (*reg & 0x0f) == 0 {
-		r.Setf(Flag.HalfCarry)
+		flags.Set(HalfCarry)
 	} else {
-		r.Clearf(Flag.HalfCarry)
+		flags.Clear(HalfCarry)
 	}
 
-	*reg--
+	r.Low--
 
-	r.setZeroIfNeeded(reg)
-	r.Setf(Flag.Negative)
+	flags.setIfZero(r.Low)
+	flags.Set(Negative)
+
 }
 
-func (r *Register) Add(reg *uint8, value uint8) {
-	fullReg := uint(*reg)
-	fullValue := uint(value)
+// Increment the high byte and set flags as necessary.
+func (r *Register) IncrementHigh(flags *Flags) {
 
-	result := fullReg + fullValue
-
-	if result > math.MaxUint8 {
-		// overflow, keep only the lower 8 bits
-		r.Setf(Flag.Carry)
-		result = uint8(result & math.MaxUint8)
-
+	if (r.High & 0x0f) == 0x0f {
+		// third bit is about to be carried over to fourth bit
+		flags.Set(HalfCarry)
 	} else {
-		r.Clearf(Flag.Carry)
+		flags.Clear(HalfCarry)
 	}
 
-	*reg = result
+	r.High++
 
-	r.setZeroIfNeeded(reg)
-	r.setHalfCarryIfNeeded(fullReg, fullValue)
-	r.Clearf(Flag.Negative)
+	flags.setIfZero(r.High)
+	flags.Clear(Negative)
+
 }
 
-func (r *Register) AddShort(reg *uint16, value uint16) {
-	fullReg := uint(*reg)
-	fullValue := uint(value)
+// Increment the high byte and set flags as necessary.
+func (r *Register) DecrementHigh(flags *Flags) {
 
-	result := fullReg + fullValue
-
-	if result > math.MaxUint16 {
-		// overflow, keep only the lower 16 bits
-		r.Setf(Flag.Carry)
-		result = uint16(result & math.MaxUint16)
-
+	if (r.High & 0x0f) == 0 {
+		flags.Set(HalfCarry)
 	} else {
-		r.Clearf(Flag.Carry)
+		flags.Clear(HalfCarry)
 	}
 
-	*reg = result
+	r.High--
 
-	r.setHalfCarryIfNeeded(reg, value)
-	r.Clearf(Flag.Negative)
-}
+	flags.setIfZero(r.High)
+	flags.Set(Negative)
 
-func (r *Register) AF() uint16 {
-	return getShort(&r.A, &r.F)
-}
-
-func (r *Register) SetAF(value uint16) {
-	setShort(&r.F, &r.A, value)
-}
-
-func (r *Register) BC() uint16 {
-	return getShort(&r.C, &r.B)
-}
-
-func (r *Register) SetBC(value uint16) {
-	setShort(&r.C, &r.B, value)
-}
-
-func (r *Register) DE() uint16 {
-	return getShort(&r.E, &r.D)
-}
-
-func (r *Register) SetDE(value uint16) {
-	setShort(&r.E, &r.D, value)
-}
-
-func (r *Register) HL() uint16 {
-	return getShort(&r.L, &r.H)
-}
-
-func (r *Register) SetHL(value uint16) {
-	setShort(&r.L, &r.H, value)
 }
