@@ -4,11 +4,25 @@ package tamago
 type State struct {
 	AF, BC, DE, HL *Register
 	SP, PC         uint16
-	Flags          *Flags
-	Clock          *Clock
-	MMU            *MMU
-	GPU            *GPU
-	Stopped        bool
+
+	Flags   *Flags
+	Clock   *Clock
+	MMU     *MMU
+	GPU     *GPU
+	Stopped bool
+}
+
+func NewState() *State {
+	s := &State{}
+	s.AF = NewRegister()
+	s.BC = NewRegister()
+	s.DE = NewRegister()
+	s.HL = NewRegister()
+
+	s.Flags = NewFlags(s.F)
+	s.Clock = NewClock()
+	s.MMU = NewMMU()
+	s.GPU = NewGPU()
 }
 
 func (s *State) Read(addr uint16) uint8 {

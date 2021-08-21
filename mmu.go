@@ -7,6 +7,10 @@ type MMU struct {
 	bus [0xFFFF]uint8
 }
 
+func NewMMU() *MMU {
+	return &MMU{}
+}
+
 func (m *MMU) read(addr uint16) uint8 {
 	return m.bus[addr]
 }

@@ -5,6 +5,10 @@ type Clock struct {
 	m, t int
 }
 
+func NewClock() *Clock {
+	return &Clock{}
+}
+
 // Step forward the clock by n machine cycles.
 func (c *Clock) Step(n int) {
 	c.m += n
