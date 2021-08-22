@@ -4,6 +4,8 @@ type Table struct {
 	ins []Instruction
 }
 
+func nop(s *State, v Value) {}
+
 // This table contains all 512 opcodes used in the Game Boy
 // (256 normal, 256 prefixed by 0xCB).
 
@@ -12,138 +14,186 @@ var table = &Table{
 
 		// 0x00
 		{
-			"NOP", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "NOP",
+			length: 0,
+			cycles: 1,
+
+			fn: nop,
 		},
 
 		// 0x01
 		{
-			"LD BC,u16", 2, 6,
-			func(s *State, v uint16) {
-				s.BC.Set(v)
+			asm:    "LD BC,u16",
+			length: 2,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+				s.BC.Set(v.U16())
 			},
 		},
 
 		// 0x02
 		{
-			"LD (BC),A", 0, 4,
-			func(s *State, v uint16) {
-				s.Write(s.BC.Get(), s.AF.Hi)
+			asm:    "LD (BC),A",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.WriteTo(s.BC, s.AF.Hi)
 			},
 		},
 
 		// 0x03
 		{
-			"INC BC", 0, 4,
-			func(s *State, v uint16) {
+			asm:    "INC BC",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
 				s.BC.Inc()
 			},
 		},
 
 		// 0x04
 		{
-			"INC B", 0, 2,
-			func(s *State, v uint16) {
-				s.Flags.inc(&s.BC.Hi)
+			asm:    "INC B",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.inc(&s.BC.Hi)
 			},
 		},
 
 		// 0x05
 		{
-			"DEC B", 0, 2,
-			func(s *State, v uint16) {
-				s.Flags.dec(&s.BC.Hi)
+			asm:    "DEC B",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.dec(&s.BC.Hi)
 			},
 		},
 
 		// 0x06
 		{
-			"LD B,u8", 1, 4,
-			func(s *State, v uint16) {
-				s.BC.Hi = uint8(v)
+			asm:    "LD B,u8",
+			length: 1,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.BC.Hi = v.U8()
 			},
 		},
 
 		// 0x07
 		{
-			"RLCA", 0, 2,
-			func(s *State, v uint16) {
+			asm:    "RLCA",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
 				// Take only the first bit and shift all the way to the right
 				carry := (s.AF.Hi & 0x80) >> 7
-				s.Flags.setIfCarry(carry)
+				s.fl.setIfCarry(carry)
 
 				// Shift A left 1 bit and add back the carry.
 				s.AF.Hi <<= 1
 				s.AF.Hi += carry
 
 				// Clear all other flags.
-				s.Flags.ClearAllExcept(Carry)
+				s.fl.ClearAllExcept(Carry)
 			},
 		},
 
 		// 0x08
 		{
-			"LD (u16),SP", 2, 10,
-			func(s *State, v uint16) {
-				s.WriteShort(s.SP, v)
+			asm:    "LD (u16),SP",
+			length: 2,
+			cycles: 5,
+
+			fn: func(s *State, v Value) {
+				s.WriteShort(s.SP, v.U16())
 			},
 		},
 
 		// 0x09
 		{
-			"ADD HL,BC", 0, 4,
-			func(s *State, v uint16) {
-				s.HL.Add(s.BC.Get(), s.Flags)
+			asm:    "ADD HL,BC",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.HL.Add(s.BC.Get(), s.fl)
 			},
 		},
 
 		// 0x0a
 		{
-			"LD A,(BC)", 0, 4,
-			func(s *State, v uint16) {
-				s.AF.Hi = s.Read(s.BC.Get())
+			asm:    "LD A,(BC)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.AF.Hi = s.ReadFrom(s.BC)
 			},
 		},
 
 		// 0x0b
 		{
-			"DEC BC", 0, 4,
-			func(s *State, v uint16) {
+			asm:    "DEC BC",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
 				s.BC.Dec()
 			},
 		},
 
 		// 0x0c
 		{
-			"INC C", 0, 2,
-			func(s *State, v uint16) {
-				s.Flags.inc(&s.BC.Lo)
+			asm:    "INC C",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.inc(&s.BC.Lo)
 			},
 		},
 
 		// 0x0d
 		{
-			"DEC C", 0, 2,
-			func(s *State, v uint16) {
-				s.Flags.dec(&s.BC.Lo)
+			asm:    "DEC C",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.dec(&s.BC.Lo)
 			},
 		},
 
 		// 0x0e
 		{
-			"LD C,u8", 1, 4,
-			func(s *State, v uint16) {
-				s.BC.Lo = uint8(v)
+			asm:    "LD C,u8",
+			length: 1,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.BC.Lo = v.U8()
 			},
 		},
 
 		// 0x0f
 		{
-			"RRCA", 0, 2,
-			func(s *State, v uint16) {
+			asm:    "RRCA",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
 				// Take only the last bit
 				carry := s.AF.Hi & 0x01
-				s.Flags.setIfCarry(carry)
+				s.fl.setIfCarry(carry)
 
 				// Shift A right 1 bit and put back the bits.
 				s.AF.Hi >>= 1
@@ -152,1505 +202,2695 @@ var table = &Table{
 				}
 
 				// Clear all other flags.
-				s.Flags.ClearAllExcept(Carry)
+				s.fl.ClearAllExcept(Carry)
 			},
 		},
 
 		// 0x10
 		{
-			"STOP", 1, 2,
-			func(s *State, v uint16) {
-				s.Stopped = true
+			asm:    "STOP",
+			length: 1,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.stopped = true
 			},
 		},
 
 		// 0x11
 		{
-			"LD DE,u16", 2, 6,
-			func(s *State, v uint16) {
-				s.DE.Set(v)
+			asm:    "LD DE,u16",
+			length: 2,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+				s.DE.Set(v.U16())
 			},
 		},
 
 		// 0x12
 		{
-			"LD (DE),A", 0, 4,
-			func(s *State, v uint16) {
-				s.Write(s.DE.Get(), s.AF.Hi)
+			asm:    "LD (DE),A",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.WriteTo(s.DE, s.AF.Hi)
 			},
 		},
 
 		// 0x13
 		{
-			"INC DE", 0, 4,
-			func(s *State, v uint16) {
+			asm:    "INC DE",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
 				s.DE.Inc()
 			},
 		},
 
 		// 0x14
 		{
-			"INC D", 0, 2,
-			func(s *State, v uint16) {
-				s.Flags.inc(&s.DE.Hi)
+			asm:    "INC D",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.inc(&s.DE.Hi)
 			},
 		},
 
 		// 0x15
 		{
-			"DEC D", 0, 2,
-			func(s *State, v uint16) {
-				s.Flags.dec(&s.DE.Hi)
+			asm:    "DEC D",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.dec(&s.DE.Hi)
 			},
 		},
 
 		// 0x16
 		{
-			"LD D,u8", 1, 4,
-			func(s *State, v uint16) {
-				s.DE.Hi = uint8(v)
+			asm:    "LD D,u8",
+			length: 1,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.DE.Hi = v.U8()
 			},
 		},
 
 		// 0x17
 		{
-			"RLA", 0, 2,
-			func(s *State, v uint16) {
+			asm:    "RLA",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
 				carry := 0
 
-				if s.Flags.Has(Carry) {
+				if s.fl.Has(Carry) {
 					carry = 1
 				}
 
-				s.Flags.setIfCarry(s.AF.Hi & 0x80)
+				s.fl.setIfCarry(s.AF.Hi & 0x80)
 
 				s.AF.Hi <<= 1
 				s.AF.Hi += carry
 
-				s.Flags.ClearAllExcept(Carry)
+				s.fl.ClearAllExcept(Carry)
 			},
 		},
 
 		// 0x18
 		{
-			"JR i8", 1, 6,
-			func(s *State, v uint16) {
-				s.PC += v
+			asm:    "JR i8",
+			length: 1,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+				s.PC += v.S8()
 			},
 		},
 
 		// 0x19
 		{
-			"ADD HL,DE", 0, 4,
-			func(s *State, v uint16) {
-				s.HL.Add(s.DE.Get(), s.Flags)
+			asm:    "ADD HL,DE",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.HL.Add(s.DE.Get(), s.fl)
 			},
 		},
 
 		// 0x1a
 		{
-			"LD A,(DE)", 0, 4,
-			func(s *State, v uint16) {
-				s.AF.Hi = s.Read(s.DE.Get())
+			asm:    "LD A,(DE)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.AF.Hi = s.ReadFrom(s.DE)
 			},
 		},
 
 		// 0x1b
 		{
-			"DEC DE", 0, 4,
-			func(s *State, v uint16) {
+			asm:    "DEC DE",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
 				s.DE.Dec()
 			},
 		},
 
 		// 0x1c
 		{
-			"INC E", 0, 2,
-			func(s *State, v uint16) {
-				s.Flags.inc(&s.DE.Lo)
+			asm:    "INC E",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.inc(&s.DE.Lo)
 			},
 		},
 
 		// 0x1d
 		{
-			"DEC E", 0, 2,
-			func(s *State, v uint16) {
-				s.Flags.dec(&s.DE.Lo)
+			asm:    "DEC E",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.dec(&s.DE.Lo)
 			},
 		},
 
 		// 0x1e
 		{
-			"LD E,u8", 1, 4,
-			func(s *State, v uint16) {
-				s.DE.Lo = uint8(v)
+			asm:    "LD E,u8",
+			length: 1,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.DE.Lo = v.U8()
 			},
 		},
 
 		// 0x1f
 		{
-			"RRA", 0, 2,
-			func(s *State, v uint16) {
+			asm:    "RRA",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
 				carryBit := 0
-				if s.Flags.Has(Carry) {
+				if s.fl.Has(Carry) {
 					carryBit = 1
 				}
 
 				carry := carryBit << 7
 
-				s.Flags.setIfCarry(s.AF.Hi & 0x01)
+				s.fl.setIfCarry(s.AF.Hi & 0x01)
 
 				s.AF.Hi >>= 1
 				s.AF.Hi += carry
 
-				s.Flags.ClearAllExcept(Carry)
+				s.fl.ClearAllExcept(Carry)
 			},
 		},
 
 		// 0x20
 		{
-			"JR NZ,i8", 1, 4,
-			func(s *State, v uint16) {
+			asm:    "JR NZ,i8",
+			length: 1,
+			cycles: 0,
 
+			fn: func(s *State, v Value) {
+				s.JumpIf(!s.fl.Has(Zero), v)
 			},
 		},
 
 		// 0x21
 		{
-			"LD HL,u16", 2, 6,
-			func(s *State, v uint16) {},
+			asm:    "LD HL,u16",
+			length: 2,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+				s.HL.Set(v.U16())
+			},
 		},
 
 		// 0x22
 		{
-			"LD (HL+),A", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD (HL+),A",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.WriteTo(s.HL, s.AF.Hi)
+				s.HL.Inc()
+			},
 		},
 
 		// 0x23
 		{
-			"INC HL", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "INC HL",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.HL.Inc()
+			},
 		},
 
 		// 0x24
 		{
-			"INC H", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "INC H",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.inc(&s.HL.Hi)
+			},
 		},
 
 		// 0x25
 		{
-			"DEC H", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "DEC H",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.dec(&s.BC.Hi)
+			},
 		},
 
 		// 0x26
 		{
-			"LD H,u8", 1, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD H,u8",
+			length: 1,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.HL.Hi = v.U8()
+			},
 		},
 
 		// 0x27
 		{
-			"DAA", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "DAA",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				a := uint16(s.AF.Hi)
+
+				if s.fl.Has(Negative) {
+
+					if s.fl.Has(HalfCarry) {
+						a = (s - 0x06) & 0xff
+					}
+
+					if s.fl.Has(Carry) {
+						a -= 0x60
+					}
+
+				} else {
+
+					if s.fl.Has(HalfCarry) || (a&0x0f) > 9 {
+						a += 0x06
+					}
+
+					if s.fl.Has(Carry) || s > 0x9f {
+						a += 0x60
+					}
+
+				}
+
+				s.AF.Hi = uint8(a & 0xff)
+
+				s.fl.Clear(HalfCarry)
+				s.fl.setIfZero(a)
+				s.fl.setIfCarry(a &^ 0xff)
+			},
 		},
 
 		// 0x28
 		{
-			"JR Z,i8", 1, 4,
-			func(s *State, v uint16) {},
+			asm:    "JR Z,i8",
+			length: 1,
+			cycles: 0,
+
+			fn: func(s *State, v Value) {
+				s.JumpIf(s.fl.Has(Zero), v)
+			},
 		},
 
 		// 0x29
 		{
-			"ADD HL,HL", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "ADD HL,HL",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.HL.Add(s.HL.Get(), s.fl)
+			},
 		},
 
 		// 0x2a
 		{
-			"LD A,(HL+)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD A,(HL+)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.AF.Hi = s.ReadFrom(s.HL)
+				s.HL.Inc()
+			},
 		},
 
 		// 0x2b
 		{
-			"DEC HL", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "DEC HL",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.HL.Dec()
+			},
 		},
 
 		// 0x2c
 		{
-			"INC L", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "INC L",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.inc(&s.HL.Lo)
+			},
 		},
 
 		// 0x2d
 		{
-			"DEC L", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "DEC L",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.dec(&s.HL.Lo)
+			},
 		},
 
 		// 0x2e
 		{
-			"LD L,u8", 1, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD L,u8",
+			length: 1,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.HL.Lo = v.U8()
+			},
 		},
 
 		// 0x2f
 		{
-			"CPL", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "CPL",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.AF.Hi = ^s.AF.Hi
+				s.fl.Set(Negative | HalfCarry)
+			},
 		},
 
 		// 0x30
 		{
-			"JR NC,i8", 1, 4,
-			func(s *State, v uint16) {},
+			asm:    "JR NC,i8",
+			length: 1,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.JumpIf(!s.fl.Has(Carry), v)
+			},
 		},
 
 		// 0x31
 		{
-			"LD SP,u16", 2, 6,
-			func(s *State, v uint16) {},
+			asm:    "LD SP,u16",
+			length: 2,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+				s.SP = v.U16()
+			},
 		},
 
 		// 0x32
 		{
-			"LD (HL-),A", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD (HL-),A",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.WriteTo(s.HL, s.AF.Hi)
+				s.HL.Dec()
+			},
 		},
 
 		// 0x33
 		{
-			"INC SP", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "INC SP",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.SP++
+			},
 		},
 
 		// 0x34
 		{
-			"INC (HL)", 0, 6,
-			func(s *State, v uint16) {},
+			asm:    "INC (HL)",
+			length: 0,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+				b := s.ReadFrom(s.HL)
+				s.fl.inc(&b)
+				s.WriteTo(s.HL, b)
+			},
 		},
 
 		// 0x35
 		{
-			"DEC (HL)", 0, 6,
-			func(s *State, v uint16) {},
+			asm:    "DEC (HL)",
+			length: 0,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+				b := s.ReadFrom(s.HL)
+				s.fl.dec(&b)
+				s.WriteTo(s.HL, b)
+			},
 		},
 
 		// 0x36
 		{
-			"LD (HL),u8", 1, 6,
-			func(s *State, v uint16) {},
+			asm:    "LD (HL),u8",
+			length: 1,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+				s.WriteTo(s.HL, v.U8())
+			},
 		},
 
 		// 0x37
 		{
-			"SCF", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "SCF",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.Set(Carry)
+				s.fl.Clear(Negative | HalfCarry)
+			},
 		},
 
 		// 0x38
 		{
-			"JR C,i8", 1, 4,
-			func(s *State, v uint16) {},
+			asm:    "JR C,i8",
+			length: 1,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.JumpIf(s.fl.Has(Carry), v)
+			},
 		},
 
 		// 0x39
 		{
-			"ADD HL,SP", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "ADD HL,SP",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.HL.Add(s.SP, s.fl)
+			},
 		},
 
 		// 0x3a
 		{
-			"LD A,(HL-)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD A,(HL-)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.AF.Hi = s.ReadFrom(s.HL)
+				s.HL.Dec()
+			},
 		},
 
 		// 0x3b
 		{
-			"DEC SP", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "DEC SP",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.SP--
+			},
 		},
 
 		// 0x3c
 		{
-			"INC A", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "INC A",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.inc(&s.AF.Hi)
+			},
 		},
 
 		// 0x3d
 		{
-			"DEC A", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "DEC A",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.dec(&s.AF.Hi)
+			},
 		},
 
 		// 0x3e
 		{
-			"LD A,u8", 1, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD A,u8",
+			length: 1,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.AF.Hi = v.U8()
+			},
 		},
 
 		// 0x3f
 		{
-			"CCF", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "CCF",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.Flip(Carry)
+			},
 		},
 
 		// 0x40
 		{
-			"LD B,B", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD B,B",
+			length: 0,
+			cycles: 1,
+
+			fn: nop,
 		},
 
 		// 0x41
 		{
-			"LD B,C", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD B,C",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.BC.Hi = s.BC.Lo
+			},
 		},
 
 		// 0x42
 		{
-			"LD B,D", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD B,D",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.BC.Hi = s.DE.Hi
+			},
 		},
 
 		// 0x43
 		{
-			"LD B,E", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD B,E",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.BC.Hi = s.DE.Lo
+			},
 		},
 
 		// 0x44
 		{
-			"LD B,H", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD B,H",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.BC.Hi = s.HL.Hi
+			},
 		},
 
 		// 0x45
 		{
-			"LD B,L", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD B,L",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.BC.Hi = s.HL.Lo
+			},
 		},
 
 		// 0x46
 		{
-			"LD B,(HL)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD B,(HL)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.BC.Hi = s.ReadFrom(s.HL)
+			},
 		},
 
 		// 0x47
 		{
-			"LD B,A", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD B,A",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.BC.Hi = s.AF.Hi
+			},
 		},
 
 		// 0x48
 		{
-			"LD C,B", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD C,B",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.BC.Lo = s.BC.Hi
+			},
 		},
 
 		// 0x49
 		{
-			"LD C,C", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD C,C",
+			length: 0,
+			cycles: 1,
+
+			fn: nop,
 		},
 
 		// 0x4a
 		{
-			"LD C,D", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD C,D",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.BC.Lo = s.DE.Hi
+			},
 		},
 
 		// 0x4b
 		{
-			"LD C,E", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD C,E",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.BC.Lo = s.DE.Lo
+			},
 		},
 
 		// 0x4c
 		{
-			"LD C,H", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD C,H",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.BC.Lo = s.HL.Hi
+			},
 		},
 
 		// 0x4d
 		{
-			"LD C,L", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD C,L",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.BC.Lo = s.HL.Lo
+			},
 		},
 
 		// 0x4e
 		{
-			"LD C,(HL)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD C,(HL)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.BC.Lo = s.ReadFrom(s.HL)
+			},
 		},
 
 		// 0x4f
 		{
-			"LD C,A", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD C,A",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.BC.Lo = s.AF.Hi
+			},
 		},
 
 		// 0x50
 		{
-			"LD D,B", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD D,B",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.DE.Hi = s.BC.Hi
+			},
 		},
 
 		// 0x51
 		{
-			"LD D,C", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD D,C",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.DE.Hi = s.BC.Lo
+			},
 		},
 
 		// 0x52
 		{
-			"LD D,D", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD D,D",
+			length: 0,
+			cycles: 1,
+
+			fn: nop,
 		},
 
 		// 0x53
 		{
-			"LD D,E", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD D,E",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.DE.Hi = s.DE.Lo
+			},
 		},
 
 		// 0x54
 		{
-			"LD D,H", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD D,H",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.DE.Hi = s.HL.Hi
+			},
 		},
 
 		// 0x55
 		{
-			"LD D,L", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD D,L",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.DE.Hi = s.HL.Lo
+			},
 		},
 
 		// 0x56
 		{
-			"LD D,(HL)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD D,(HL)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.DE.Hi = s.ReadFrom(s.HL)
+			},
 		},
 
 		// 0x57
 		{
-			"LD D,A", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD D,A",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.DE.Hi = s.AF.Hi
+			},
 		},
 
 		// 0x58
 		{
-			"LD E,B", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD E,B",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.DE.Lo = s.BC.Hi
+			},
 		},
 
 		// 0x59
 		{
-			"LD E,C", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD E,C",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.DE.Lo = s.BC.Lo
+			},
 		},
 
 		// 0x5a
 		{
-			"LD E,D", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD E,D",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.DE.Lo = s.DE.Hi
+			},
 		},
 
 		// 0x5b
 		{
-			"LD E,E", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD E,E",
+			length: 0,
+			cycles: 1,
+
+			fn: nop,
 		},
 
 		// 0x5c
 		{
-			"LD E,H", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD E,H",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.DE.Lo = s.HL.Hi
+			},
 		},
 
 		// 0x5d
 		{
-			"LD E,L", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD E,L",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.DE.Lo = s.HL.Lo
+			},
 		},
 
 		// 0x5e
 		{
-			"LD E,(HL)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD E,(HL)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.DE.Lo = s.ReadFrom(s.HL)
+			},
 		},
 
 		// 0x5f
 		{
-			"LD E,A", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD E,A",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.DE.Lo = s.AF.Hi
+			},
 		},
 
 		// 0x60
 		{
-			"LD H,B", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD H,B",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.HL.Hi = s.BC.Hi
+			},
 		},
 
 		// 0x61
 		{
-			"LD H,C", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD H,C",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.HL.Hi = s.BC.Lo
+			},
 		},
 
 		// 0x62
 		{
-			"LD H,D", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD H,D",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.HL.Hi = s.DE.Hi
+			},
 		},
 
 		// 0x63
 		{
-			"LD H,E", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD H,E",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.HL.Hi = s.DE.Lo
+			},
 		},
 
 		// 0x64
 		{
-			"LD H,H", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD H,H",
+			length: 0,
+			cycles: 1,
+
+			fn: nop,
 		},
 
 		// 0x65
 		{
-			"LD H,L", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD H,L",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.HL.Hi = s.HL.Lo
+			},
 		},
 
 		// 0x66
 		{
-			"LD H,(HL)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD H,(HL)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.HL.Hi = s.ReadFrom(s.HL)
+			},
 		},
 
 		// 0x67
 		{
-			"LD H,A", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD H,A",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.HL.Hi = s.AF.Hi
+			},
 		},
 
 		// 0x68
 		{
-			"LD L,B", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD L,B",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.HL.Lo = s.BC.Hi
+			},
 		},
 
 		// 0x69
 		{
-			"LD L,C", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD L,C",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.HL.Lo = s.BC.Lo
+			},
 		},
 
 		// 0x6a
 		{
-			"LD L,D", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD L,D",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.HL.Lo = s.DE.Hi
+			},
 		},
 
 		// 0x6b
 		{
-			"LD L,E", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD L,E",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.HL.Lo = s.DE.Lo
+			},
 		},
 
 		// 0x6c
 		{
-			"LD L,H", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD L,H",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.HL.Lo = s.HL.Hi
+			},
 		},
 
 		// 0x6d
 		{
-			"LD L,L", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD L,L",
+			length: 0,
+			cycles: 1,
+
+			fn: nop,
 		},
 
 		// 0x6e
 		{
-			"LD L,(HL)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD L,(HL)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.HL.Lo = s.ReadFrom(s.HL)
+			},
 		},
 
 		// 0x6f
 		{
-			"LD L,A", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD L,A",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.HL.Lo = s.AF.Hi
+			},
 		},
 
 		// 0x70
 		{
-			"LD (HL),B", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD (HL),B",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.WriteTo(s.HL, s.BC.Hi)
+			},
 		},
 
 		// 0x71
 		{
-			"LD (HL),C", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD (HL),C",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.WriteTo(s.HL, s.BC.Lo)
+			},
 		},
 
 		// 0x72
 		{
-			"LD (HL),D", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD (HL),D",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.WriteTo(s.HL, s.DE.Hi)
+			},
 		},
 
 		// 0x73
 		{
-			"LD (HL),E", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD (HL),E",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.WriteTo(s.HL, s.DE.Lo)
+			},
 		},
 
 		// 0x74
 		{
-			"LD (HL),H", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD (HL),H",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.WriteTo(s.HL, s.HL.Hi)
+			},
 		},
 
 		// 0x75
 		{
-			"LD (HL),L", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD (HL),L",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.WriteTo(s.HL, s.HL.Lo)
+			},
 		},
 
 		// 0x76
 		{
-			"HALT", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "HALT",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				// TODO
+			},
 		},
 
 		// 0x77
 		{
-			"LD (HL),A", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD (HL),A",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.WriteTo(s.HL, s.AF.Hi)
+			},
 		},
 
 		// 0x78
 		{
-			"LD A,B", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD A,B",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.AF.Hi = s.BC.Hi
+			},
 		},
 
 		// 0x79
 		{
-			"LD A,C", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD A,C",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.AF.Hi = s.BC.Lo
+			},
 		},
 
 		// 0x7a
 		{
-			"LD A,D", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD A,D",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.AF.Hi = s.DE.Hi
+			},
 		},
 
 		// 0x7b
 		{
-			"LD A,E", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD A,E",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.AF.Hi = s.DE.Lo
+			},
 		},
 
 		// 0x7c
 		{
-			"LD A,H", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD A,H",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.AF.Hi = s.HL.Hi
+			},
 		},
 
 		// 0x7d
 		{
-			"LD A,L", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD A,L",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.AF.Hi = s.HL.Lo
+			},
 		},
 
 		// 0x7e
 		{
-			"LD A,(HL)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD A,(HL)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.AF.Hi = s.ReadFrom(s.HL)
+			},
 		},
 
 		// 0x7f
 		{
-			"LD A,A", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "LD A,A",
+			length: 0,
+			cycles: 1,
+
+			fn: nop,
 		},
 
 		// 0x80
 		{
-			"ADD A,B", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "ADD A,B",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.add(&s.AF.Hi, s.BC.Hi)
+			},
 		},
 
 		// 0x81
 		{
-			"ADD A,C", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "ADD A,C",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.add(&s.AF.Hi, s.BC.Lo)
+			},
 		},
 
 		// 0x82
 		{
-			"ADD A,D", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "ADD A,D",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.add(&s.AF.Hi, s.DE.Hi)
+			},
 		},
 
 		// 0x83
 		{
-			"ADD A,E", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "ADD A,E",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.add(&s.AF.Hi, s.DE.Lo)
+			},
 		},
 
 		// 0x84
 		{
-			"ADD A,H", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "ADD A,H",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.add(&s.AF.Hi, s.HL.Hi)
+			},
 		},
 
 		// 0x85
 		{
-			"ADD A,L", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "ADD A,L",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.add(&s.AF.Hi, s.HL.Lo)
+			},
 		},
 
 		// 0x86
 		{
-			"ADD A,(HL)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "ADD A,(HL)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.fl.add(&s.AF.Hi, s.ReadFrom(s.HL))
+			},
 		},
 
 		// 0x87
 		{
-			"ADD A,A", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "ADD A,A",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.add(&s.AF.Hi, s.AF.Hi)
+			},
 		},
 
 		// 0x88
 		{
-			"ADC A,B", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "ADC A,B",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.adc(s.BC.Hi)
+			},
 		},
 
 		// 0x89
 		{
-			"ADC A,C", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "ADC A,C",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.adc(s.BC.Lo)
+			},
 		},
 
 		// 0x8a
 		{
-			"ADC A,D", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "ADC A,D",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.adc(s.DE.Hi)
+			},
 		},
 
 		// 0x8b
 		{
-			"ADC A,E", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "ADC A,E",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.adc(s.DE.Lo)
+			},
 		},
 
 		// 0x8c
 		{
-			"ADC A,H", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "ADC A,H",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.adc(s.HL.Hi)
+			},
 		},
 
 		// 0x8d
 		{
-			"ADC A,L", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "ADC A,L",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.adc(s.HL.Lo)
+			},
 		},
 
 		// 0x8e
 		{
-			"ADC A,(HL)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "ADC A,(HL)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+				s.fl.adc(s.ReadFrom(s.HL))
+			},
 		},
 
 		// 0x8f
 		{
-			"ADC A,A", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "ADC A,A",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+				s.fl.adc(s.AF.Hi)
+			},
 		},
 
 		// 0x90
 		{
-			"SUB A,B", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "SUB A,B",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0x91
 		{
-			"SUB A,C", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "SUB A,C",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0x92
 		{
-			"SUB A,D", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "SUB A,D",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0x93
 		{
-			"SUB A,E", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "SUB A,E",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0x94
 		{
-			"SUB A,H", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "SUB A,H",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0x95
 		{
-			"SUB A,L", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "SUB A,L",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0x96
 		{
-			"SUB A,(HL)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "SUB A,(HL)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0x97
 		{
-			"SUB A,A", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "SUB A,A",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0x98
 		{
-			"SBC A,B", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "SBC A,B",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0x99
 		{
-			"SBC A,C", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "SBC A,C",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0x9a
 		{
-			"SBC A,D", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "SBC A,D",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0x9b
 		{
-			"SBC A,E", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "SBC A,E",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0x9c
 		{
-			"SBC A,H", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "SBC A,H",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0x9d
 		{
-			"SBC A,L", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "SBC A,L",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0x9e
 		{
-			"SBC A,(HL)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "SBC A,(HL)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0x9f
 		{
-			"SBC A,A", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "SBC A,A",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xa0
 		{
-			"AND A,B", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "AND A,B",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xa1
 		{
-			"AND A,C", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "AND A,C",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xa2
 		{
-			"AND A,D", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "AND A,D",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xa3
 		{
-			"AND A,E", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "AND A,E",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xa4
 		{
-			"AND A,H", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "AND A,H",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xa5
 		{
-			"AND A,L", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "AND A,L",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xa6
 		{
-			"AND A,(HL)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "AND A,(HL)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xa7
 		{
-			"AND A,A", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "AND A,A",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xa8
 		{
-			"XOR A,B", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "XOR A,B",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xa9
 		{
-			"XOR A,C", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "XOR A,C",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xaa
 		{
-			"XOR A,D", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "XOR A,D",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xab
 		{
-			"XOR A,E", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "XOR A,E",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xac
 		{
-			"XOR A,H", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "XOR A,H",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xad
 		{
-			"XOR A,L", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "XOR A,L",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xae
 		{
-			"XOR A,(HL)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "XOR A,(HL)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xaf
 		{
-			"XOR A,A", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "XOR A,A",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xb0
 		{
-			"OR A,B", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "OR A,B",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xb1
 		{
-			"OR A,C", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "OR A,C",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xb2
 		{
-			"OR A,D", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "OR A,D",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xb3
 		{
-			"OR A,E", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "OR A,E",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xb4
 		{
-			"OR A,H", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "OR A,H",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xb5
 		{
-			"OR A,L", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "OR A,L",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xb6
 		{
-			"OR A,(HL)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "OR A,(HL)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xb7
 		{
-			"OR A,A", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "OR A,A",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xb8
 		{
-			"CP A,B", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "CP A,B",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xb9
 		{
-			"CP A,C", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "CP A,C",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xba
 		{
-			"CP A,D", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "CP A,D",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xbb
 		{
-			"CP A,E", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "CP A,E",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xbc
 		{
-			"CP A,H", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "CP A,H",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xbd
 		{
-			"CP A,L", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "CP A,L",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xbe
 		{
-			"CP A,(HL)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "CP A,(HL)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xbf
 		{
-			"CP A,A", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "CP A,A",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xc0
 		{
-			"RET NZ", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "RET NZ",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xc1
 		{
-			"POP BC", 0, 6,
-			func(s *State, v uint16) {},
+			asm:    "POP BC",
+			length: 0,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xc2
 		{
-			"JP NZ,u16", 2, 6,
-			func(s *State, v uint16) {},
+			asm:    "JP NZ,u16",
+			length: 2,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xc3
 		{
-			"JP u16", 2, 8,
-			func(s *State, v uint16) {},
+			asm:    "JP u16",
+			length: 2,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xc4
 		{
-			"CALL NZ,u16", 2, 6,
-			func(s *State, v uint16) {},
+			asm:    "CALL NZ,u16",
+			length: 2,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xc5
 		{
-			"PUSH BC", 0, 8,
-			func(s *State, v uint16) {},
+			asm:    "PUSH BC",
+			length: 0,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xc6
 		{
-			"ADD A,u8", 1, 4,
-			func(s *State, v uint16) {},
+			asm:    "ADD A,u8",
+			length: 1,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xc7
 		{
-			"RST 00h", 0, 8,
-			func(s *State, v uint16) {},
+			asm:    "RST 00h",
+			length: 0,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xc8
 		{
-			"RET Z", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "RET Z",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xc9
 		{
-			"RET", 0, 8,
-			func(s *State, v uint16) {},
+			asm:    "RET",
+			length: 0,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xca
 		{
-			"JP Z,u16", 2, 6,
-			func(s *State, v uint16) {},
+			asm:    "JP Z,u16",
+			length: 2,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xcb
 		{
-			"PREFIX CB", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "PREFIX CB",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xcc
 		{
-			"CALL Z,u16", 2, 6,
-			func(s *State, v uint16) {},
+			asm:    "CALL Z,u16",
+			length: 2,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xcd
 		{
-			"CALL u16", 2, 12,
-			func(s *State, v uint16) {},
+			asm:    "CALL u16",
+			length: 2,
+			cycles: 6,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xce
 		{
-			"ADC A,u8", 1, 4,
-			func(s *State, v uint16) {},
+			asm:    "ADC A,u8",
+			length: 1,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xcf
 		{
-			"RST 08h", 0, 8,
-			func(s *State, v uint16) {},
+			asm:    "RST 08h",
+			length: 0,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xd0
 		{
-			"RET NC", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "RET NC",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xd1
 		{
-			"POP DE", 0, 6,
-			func(s *State, v uint16) {},
+			asm:    "POP DE",
+			length: 0,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xd2
 		{
-			"JP NC,u16", 2, 6,
-			func(s *State, v uint16) {},
+			asm:    "JP NC,u16",
+			length: 2,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xd3
 		{
-			"UNUSED", 0, 0,
-			func(s *State, v uint16) {},
+			asm:    "UNUSED",
+			length: 0,
+			cycles: 0,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xd4
 		{
-			"CALL NC,u16", 2, 6,
-			func(s *State, v uint16) {},
+			asm:    "CALL NC,u16",
+			length: 2,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xd5
 		{
-			"PUSH DE", 0, 8,
-			func(s *State, v uint16) {},
+			asm:    "PUSH DE",
+			length: 0,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xd6
 		{
-			"SUB A,u8", 1, 4,
-			func(s *State, v uint16) {},
+			asm:    "SUB A,u8",
+			length: 1,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xd7
 		{
-			"RST 10h", 0, 8,
-			func(s *State, v uint16) {},
+			asm:    "RST 10h",
+			length: 0,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xd8
 		{
-			"RET C", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "RET C",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xd9
 		{
-			"RETI", 0, 8,
-			func(s *State, v uint16) {},
+			asm:    "RETI",
+			length: 0,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xda
 		{
-			"JP C,u16", 2, 6,
-			func(s *State, v uint16) {},
+			asm:    "JP C,u16",
+			length: 2,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xdb
 		{
-			"UNUSED", 0, 0,
-			func(s *State, v uint16) {},
+			asm:    "UNUSED",
+			length: 0,
+			cycles: 0,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xdc
 		{
-			"CALL C,u16", 2, 6,
-			func(s *State, v uint16) {},
+			asm:    "CALL C,u16",
+			length: 2,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xdd
 		{
-			"UNUSED", 0, 0,
-			func(s *State, v uint16) {},
+			asm:    "UNUSED",
+			length: 0,
+			cycles: 0,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xde
 		{
-			"SBC A,u8", 1, 4,
-			func(s *State, v uint16) {},
+			asm:    "SBC A,u8",
+			length: 1,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xdf
 		{
-			"RST 18h", 0, 8,
-			func(s *State, v uint16) {},
+			asm:    "RST 18h",
+			length: 0,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xe0
 		{
-			"LD (FF00+u8),A", 1, 6,
-			func(s *State, v uint16) {},
+			asm:    "LD (FF00+u8),A",
+			length: 1,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xe1
 		{
-			"POP HL", 0, 6,
-			func(s *State, v uint16) {},
+			asm:    "POP HL",
+			length: 0,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xe2
 		{
-			"LD (FF00+C),A", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD (FF00+C),A",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xe3
 		{
-			"UNUSED", 0, 0,
-			func(s *State, v uint16) {},
+			asm:    "UNUSED",
+			length: 0,
+			cycles: 0,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xe4
 		{
-			"UNUSED", 0, 0,
-			func(s *State, v uint16) {},
+			asm:    "UNUSED",
+			length: 0,
+			cycles: 0,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xe5
 		{
-			"PUSH HL", 0, 8,
-			func(s *State, v uint16) {},
+			asm:    "PUSH HL",
+			length: 0,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xe6
 		{
-			"AND A,u8", 1, 4,
-			func(s *State, v uint16) {},
+			asm:    "AND A,u8",
+			length: 1,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xe7
 		{
-			"RST 20h", 0, 8,
-			func(s *State, v uint16) {},
+			asm:    "RST 20h",
+			length: 0,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xe8
 		{
-			"ADD SP,i8", 1, 8,
-			func(s *State, v uint16) {},
+			asm:    "ADD SP,i8",
+			length: 1,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xe9
 		{
-			"JP HL", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "JP HL",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xea
 		{
-			"LD (u16),A", 2, 8,
-			func(s *State, v uint16) {},
+			asm:    "LD (u16),A",
+			length: 2,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xeb
 		{
-			"UNUSED", 0, 0,
-			func(s *State, v uint16) {},
+			asm:    "UNUSED",
+			length: 0,
+			cycles: 0,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xec
 		{
-			"UNUSED", 0, 0,
-			func(s *State, v uint16) {},
+			asm:    "UNUSED",
+			length: 0,
+			cycles: 0,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xed
 		{
-			"UNUSED", 0, 0,
-			func(s *State, v uint16) {},
+			asm:    "UNUSED",
+			length: 0,
+			cycles: 0,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xee
 		{
-			"XOR A,u8", 1, 4,
-			func(s *State, v uint16) {},
+			asm:    "XOR A,u8",
+			length: 1,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xef
 		{
-			"RST 28h", 0, 8,
-			func(s *State, v uint16) {},
+			asm:    "RST 28h",
+			length: 0,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xf0
 		{
-			"LD A,(FF00+u8)", 1, 6,
-			func(s *State, v uint16) {},
+			asm:    "LD A,(FF00+u8)",
+			length: 1,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xf1
 		{
-			"POP AF", 0, 6,
-			func(s *State, v uint16) {},
+			asm:    "POP AF",
+			length: 0,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xf2
 		{
-			"LD A,(FF00+C)", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD A,(FF00+C)",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xf3
 		{
-			"DI", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "DI",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xf4
 		{
-			"UNUSED", 0, 0,
-			func(s *State, v uint16) {},
+			asm:    "UNUSED",
+			length: 0,
+			cycles: 0,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xf5
 		{
-			"PUSH AF", 0, 8,
-			func(s *State, v uint16) {},
+			asm:    "PUSH AF",
+			length: 0,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xf6
 		{
-			"OR A,u8", 1, 4,
-			func(s *State, v uint16) {},
+			asm:    "OR A,u8",
+			length: 1,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xf7
 		{
-			"RST 30h", 0, 8,
-			func(s *State, v uint16) {},
+			asm:    "RST 30h",
+			length: 0,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xf8
 		{
-			"LD HL,SP+i8", 1, 6,
-			func(s *State, v uint16) {},
+			asm:    "LD HL,SP+i8",
+			length: 1,
+			cycles: 3,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xf9
 		{
-			"LD SP,HL", 0, 4,
-			func(s *State, v uint16) {},
+			asm:    "LD SP,HL",
+			length: 0,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xfa
 		{
-			"LD A,(u16)", 2, 8,
-			func(s *State, v uint16) {},
+			asm:    "LD A,(u16)",
+			length: 2,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xfb
 		{
-			"EI", 0, 2,
-			func(s *State, v uint16) {},
+			asm:    "EI",
+			length: 0,
+			cycles: 1,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xfc
 		{
-			"UNUSED", 0, 0,
-			func(s *State, v uint16) {},
+			asm:    "UNUSED",
+			length: 0,
+			cycles: 0,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xfd
 		{
-			"UNUSED", 0, 0,
-			func(s *State, v uint16) {},
+			asm:    "UNUSED",
+			length: 0,
+			cycles: 0,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xfe
 		{
-			"CP A,u8", 1, 4,
-			func(s *State, v uint16) {},
+			asm:    "CP A,u8",
+			length: 1,
+			cycles: 2,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 
 		// 0xff
 		{
-			"RST 38h", 0, 8,
-			func(s *State, v uint16) {},
+			asm:    "RST 38h",
+			length: 0,
+			cycles: 4,
+
+			fn: func(s *State, v Value) {
+
+			},
 		},
 	},
 }

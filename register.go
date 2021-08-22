@@ -20,12 +20,11 @@ func NewRegister() *Register {
 }
 
 func (r *Register) Get() uint16 {
-	return uint16(r.Hi)<<8 | uint16(r.Lo)
+	return U16.From(r.Lo, r.Hi)
 }
 
 func (r *Register) Set(v uint16) {
-	r.Hi = uint8(v >> 8)
-	r.Lo = uint8(v & 0xff)
+	U16.To(&r.Lo, &r.Hi, v)
 }
 
 func (r *Register) Inc() {
@@ -37,17 +36,15 @@ func (r *Register) Dec() {
 }
 
 // Add a value to the register and set flags as necessary.
-func (r *Register) Add(v uint16, flags *Flags) {
-	original := uint(r.Get())
-	value := uint(v)
-	result := original + value
+func (r *Register) Add(v uint16, fl *Flags) {
+	result := uint(r.Get()) + uint(v)
 
 	// The result of the bit clear will be more than 1 if there is overflow.
-	flags.setIfCarry(result &^ math.MaxUint16)
+	fl.setIfCarry(result &^ math.MaxUint16)
 
 	// Truncate any overflow.
 	r.Set(uint16(result & math.MaxUint16))
 
-	flags.setIfHalfCarry(original, value)
-	flags.Clear(Negative)
+	fl.setIfHalfCarry(uint(r.Get()), uint(v))
+	fl.Clear(Negative)
 }
