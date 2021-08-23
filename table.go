@@ -129,7 +129,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x0a
+		// 0x0A
 		{
 			asm:    "LD A,(BC)",
 			length: 0,
@@ -140,7 +140,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x0b
+		// 0x0B
 		{
 			asm:    "DEC BC",
 			length: 0,
@@ -151,7 +151,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x0c
+		// 0x0C
 		{
 			asm:    "INC C",
 			length: 0,
@@ -162,7 +162,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x0d
+		// 0x0D
 		{
 			asm:    "DEC C",
 			length: 0,
@@ -173,7 +173,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x0e
+		// 0x0E
 		{
 			asm:    "LD C,u8",
 			length: 1,
@@ -184,7 +184,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x0f
+		// 0x0F
 		{
 			asm:    "RRCA",
 			length: 0,
@@ -327,7 +327,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x1a
+		// 0x1A
 		{
 			asm:    "LD A,(DE)",
 			length: 0,
@@ -338,7 +338,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x1b
+		// 0x1B
 		{
 			asm:    "DEC DE",
 			length: 0,
@@ -349,7 +349,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x1c
+		// 0x1C
 		{
 			asm:    "INC E",
 			length: 0,
@@ -360,7 +360,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x1d
+		// 0x1D
 		{
 			asm:    "DEC E",
 			length: 0,
@@ -371,7 +371,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x1e
+		// 0x1E
 		{
 			asm:    "LD E,u8",
 			length: 1,
@@ -382,7 +382,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x1f
+		// 0x1F
 		{
 			asm:    "RRA",
 			length: 0,
@@ -495,7 +495,7 @@ var table = &Table{
 				if s.fl.Has(Negative) {
 
 					if s.fl.Has(HalfCarry) {
-						a = (s - 0x06) & 0xff
+						a = (s - 0x06) & 0xFF
 					}
 
 					if s.fl.Has(Carry) {
@@ -504,21 +504,21 @@ var table = &Table{
 
 				} else {
 
-					if s.fl.Has(HalfCarry) || (a&0x0f) > 9 {
+					if s.fl.Has(HalfCarry) || (a&0x0F) > 9 {
 						a += 0x06
 					}
 
-					if s.fl.Has(Carry) || s > 0x9f {
+					if s.fl.Has(Carry) || s > 0x9F {
 						a += 0x60
 					}
 
 				}
 
-				s.AF.Hi = uint8(a & 0xff)
+				s.AF.Hi = uint8(a & 0xFF)
 
 				s.fl.Clear(HalfCarry)
 				s.fl.setIfZero(a)
-				s.fl.setIfCarry(a &^ 0xff)
+				s.fl.setIfCarry(a &^ 0xFF)
 			},
 		},
 
@@ -544,7 +544,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x2a
+		// 0x2A
 		{
 			asm:    "LD A,(HL+)",
 			length: 0,
@@ -556,7 +556,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x2b
+		// 0x2B
 		{
 			asm:    "DEC HL",
 			length: 0,
@@ -567,7 +567,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x2c
+		// 0x2C
 		{
 			asm:    "INC L",
 			length: 0,
@@ -578,7 +578,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x2d
+		// 0x2D
 		{
 			asm:    "DEC L",
 			length: 0,
@@ -589,7 +589,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x2e
+		// 0x2E
 		{
 			asm:    "LD L,u8",
 			length: 1,
@@ -600,7 +600,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x2f
+		// 0x2F
 		{
 			asm:    "CPL",
 			length: 0,
@@ -728,7 +728,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x3a
+		// 0x3A
 		{
 			asm:    "LD A,(HL-)",
 			length: 0,
@@ -740,7 +740,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x3b
+		// 0x3B
 		{
 			asm:    "DEC SP",
 			length: 0,
@@ -751,7 +751,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x3c
+		// 0x3C
 		{
 			asm:    "INC A",
 			length: 0,
@@ -762,7 +762,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x3d
+		// 0x3D
 		{
 			asm:    "DEC A",
 			length: 0,
@@ -773,7 +773,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x3e
+		// 0x3E
 		{
 			asm:    "LD A,u8",
 			length: 1,
@@ -784,7 +784,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x3f
+		// 0x3F
 		{
 			asm:    "CCF",
 			length: 0,
@@ -901,7 +901,7 @@ var table = &Table{
 			fn: nop,
 		},
 
-		// 0x4a
+		// 0x4A
 		{
 			asm:    "LD C,D",
 			length: 0,
@@ -912,7 +912,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x4b
+		// 0x4B
 		{
 			asm:    "LD C,E",
 			length: 0,
@@ -923,7 +923,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x4c
+		// 0x4C
 		{
 			asm:    "LD C,H",
 			length: 0,
@@ -934,7 +934,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x4d
+		// 0x4D
 		{
 			asm:    "LD C,L",
 			length: 0,
@@ -945,7 +945,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x4e
+		// 0x4E
 		{
 			asm:    "LD C,(HL)",
 			length: 0,
@@ -956,7 +956,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x4f
+		// 0x4F
 		{
 			asm:    "LD C,A",
 			length: 0,
@@ -1075,7 +1075,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x5a
+		// 0x5A
 		{
 			asm:    "LD E,D",
 			length: 0,
@@ -1086,7 +1086,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x5b
+		// 0x5B
 		{
 			asm:    "LD E,E",
 			length: 0,
@@ -1095,7 +1095,7 @@ var table = &Table{
 			fn: nop,
 		},
 
-		// 0x5c
+		// 0x5C
 		{
 			asm:    "LD E,H",
 			length: 0,
@@ -1106,7 +1106,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x5d
+		// 0x5D
 		{
 			asm:    "LD E,L",
 			length: 0,
@@ -1117,7 +1117,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x5e
+		// 0x5E
 		{
 			asm:    "LD E,(HL)",
 			length: 0,
@@ -1128,7 +1128,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x5f
+		// 0x5F
 		{
 			asm:    "LD E,A",
 			length: 0,
@@ -1247,7 +1247,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x6a
+		// 0x6A
 		{
 			asm:    "LD L,D",
 			length: 0,
@@ -1258,7 +1258,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x6b
+		// 0x6B
 		{
 			asm:    "LD L,E",
 			length: 0,
@@ -1269,7 +1269,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x6c
+		// 0x6C
 		{
 			asm:    "LD L,H",
 			length: 0,
@@ -1280,7 +1280,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x6d
+		// 0x6D
 		{
 			asm:    "LD L,L",
 			length: 0,
@@ -1289,7 +1289,7 @@ var table = &Table{
 			fn: nop,
 		},
 
-		// 0x6e
+		// 0x6E
 		{
 			asm:    "LD L,(HL)",
 			length: 0,
@@ -1300,7 +1300,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x6f
+		// 0x6F
 		{
 			asm:    "LD L,A",
 			length: 0,
@@ -1421,7 +1421,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x7a
+		// 0x7A
 		{
 			asm:    "LD A,D",
 			length: 0,
@@ -1432,7 +1432,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x7b
+		// 0x7B
 		{
 			asm:    "LD A,E",
 			length: 0,
@@ -1443,7 +1443,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x7c
+		// 0x7C
 		{
 			asm:    "LD A,H",
 			length: 0,
@@ -1454,7 +1454,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x7d
+		// 0x7D
 		{
 			asm:    "LD A,L",
 			length: 0,
@@ -1465,7 +1465,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x7e
+		// 0x7E
 		{
 			asm:    "LD A,(HL)",
 			length: 0,
@@ -1476,7 +1476,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x7f
+		// 0x7F
 		{
 			asm:    "LD A,A",
 			length: 0,
@@ -1595,7 +1595,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x8a
+		// 0x8A
 		{
 			asm:    "ADC A,D",
 			length: 0,
@@ -1606,7 +1606,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x8b
+		// 0x8B
 		{
 			asm:    "ADC A,E",
 			length: 0,
@@ -1617,7 +1617,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x8c
+		// 0x8C
 		{
 			asm:    "ADC A,H",
 			length: 0,
@@ -1628,7 +1628,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x8d
+		// 0x8D
 		{
 			asm:    "ADC A,L",
 			length: 0,
@@ -1639,7 +1639,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x8e
+		// 0x8E
 		{
 			asm:    "ADC A,(HL)",
 			length: 0,
@@ -1650,7 +1650,7 @@ var table = &Table{
 			},
 		},
 
-		// 0x8f
+		// 0x8F
 		{
 			asm:    "ADC A,A",
 			length: 0,
@@ -1668,7 +1668,7 @@ var table = &Table{
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sub(s.BC.Hi)
 			},
 		},
 
@@ -1679,7 +1679,7 @@ var table = &Table{
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sub(s.BC.Lo)
 			},
 		},
 
@@ -1690,7 +1690,7 @@ var table = &Table{
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sub(s.DE.Hi)
 			},
 		},
 
@@ -1701,7 +1701,7 @@ var table = &Table{
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sub(s.DE.Lo)
 			},
 		},
 
@@ -1712,7 +1712,7 @@ var table = &Table{
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sub(s.DE.Lo)
 			},
 		},
 
@@ -1723,7 +1723,7 @@ var table = &Table{
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sub(s.HL.Lo)
 			},
 		},
 
@@ -1734,7 +1734,7 @@ var table = &Table{
 			cycles: 2,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sub(s.ReadFrom(s.HL))
 			},
 		},
 
@@ -1745,7 +1745,7 @@ var table = &Table{
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sub(s.AF.Hi)
 			},
 		},
 
@@ -1756,7 +1756,7 @@ var table = &Table{
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sbc(s.BC.Hi)
 			},
 		},
 
@@ -1767,561 +1767,587 @@ var table = &Table{
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sbc(s.BC.Lo)
 			},
 		},
 
-		// 0x9a
+		// 0x9A
 		{
 			asm:    "SBC A,D",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sbc(s.DE.Hi)
 			},
 		},
 
-		// 0x9b
+		// 0x9B
 		{
 			asm:    "SBC A,E",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sbc(s.DE.Lo)
 			},
 		},
 
-		// 0x9c
+		// 0x9C
 		{
 			asm:    "SBC A,H",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sbc(s.HL.Hi)
 			},
 		},
 
-		// 0x9d
+		// 0x9D
 		{
 			asm:    "SBC A,L",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sbc(s.HL.Lo)
 			},
 		},
 
-		// 0x9e
+		// 0x9E
 		{
 			asm:    "SBC A,(HL)",
 			length: 0,
 			cycles: 2,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sbc(s.ReadFrom(s.HL))
 			},
 		},
 
-		// 0x9f
+		// 0x9F
 		{
 			asm:    "SBC A,A",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sbc(s.AF.Hi)
 			},
 		},
 
-		// 0xa0
+		// 0xA0
 		{
 			asm:    "AND A,B",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.and(s.BC.Hi)
 			},
 		},
 
-		// 0xa1
+		// 0xA1
 		{
 			asm:    "AND A,C",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.and(s.BC.Lo)
 			},
 		},
 
-		// 0xa2
+		// 0xA2
 		{
 			asm:    "AND A,D",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.and(s.DE.Hi)
 			},
 		},
 
-		// 0xa3
+		// 0xA3
 		{
 			asm:    "AND A,E",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.and(s.DE.Lo)
 			},
 		},
 
-		// 0xa4
+		// 0xA4
 		{
 			asm:    "AND A,H",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.and(s.HL.Hi)
 			},
 		},
 
-		// 0xa5
+		// 0xA5
 		{
 			asm:    "AND A,L",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.and(s.HL.Lo)
 			},
 		},
 
-		// 0xa6
+		// 0xA6
 		{
 			asm:    "AND A,(HL)",
 			length: 0,
 			cycles: 2,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.and(s.ReadFrom(s.HL))
 			},
 		},
 
-		// 0xa7
+		// 0xA7
 		{
 			asm:    "AND A,A",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.and(s.AF.Hi)
 			},
 		},
 
-		// 0xa8
+		// 0xA8
 		{
 			asm:    "XOR A,B",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.xor(s.BC.Hi)
 			},
 		},
 
-		// 0xa9
+		// 0xA9
 		{
 			asm:    "XOR A,C",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.xor(s.BC.Lo)
 			},
 		},
 
-		// 0xaa
+		// 0xAA
 		{
 			asm:    "XOR A,D",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.xor(s.DE.Hi)
 			},
 		},
 
-		// 0xab
+		// 0xAB
 		{
 			asm:    "XOR A,E",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.xor(s.DE.Lo)
 			},
 		},
 
-		// 0xac
+		// 0xAC
 		{
 			asm:    "XOR A,H",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.xor(s.HL.Hi)
 			},
 		},
 
-		// 0xad
+		// 0xAD
 		{
 			asm:    "XOR A,L",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.xor(s.HL.Lo)
 			},
 		},
 
-		// 0xae
+		// 0xAE
 		{
 			asm:    "XOR A,(HL)",
 			length: 0,
 			cycles: 2,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.xor(s.ReadFrom(s.HL))
 			},
 		},
 
-		// 0xaf
+		// 0xAF
 		{
 			asm:    "XOR A,A",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.xor(s.AF.Hi)
 			},
 		},
 
-		// 0xb0
+		// 0xB0
 		{
 			asm:    "OR A,B",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.or(s.BC.Hi)
 			},
 		},
 
-		// 0xb1
+		// 0xB1
 		{
 			asm:    "OR A,C",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.or(s.BC.Lo)
 			},
 		},
 
-		// 0xb2
+		// 0xB2
 		{
 			asm:    "OR A,D",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.or(s.DE.Hi)
 			},
 		},
 
-		// 0xb3
+		// 0xB3
 		{
 			asm:    "OR A,E",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.or(s.DE.Lo)
 			},
 		},
 
-		// 0xb4
+		// 0xB4
 		{
 			asm:    "OR A,H",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.or(s.HL.Hi)
 			},
 		},
 
-		// 0xb5
+		// 0xB5
 		{
 			asm:    "OR A,L",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.or(s.HL.Lo)
 			},
 		},
 
-		// 0xb6
+		// 0xB6
 		{
 			asm:    "OR A,(HL)",
 			length: 0,
 			cycles: 2,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.or(s.ReadFrom(s.HL))
 			},
 		},
 
-		// 0xb7
+		// 0xB7
 		{
 			asm:    "OR A,A",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.or(s.AF.Hi)
 			},
 		},
 
-		// 0xb8
+		// 0xB8
 		{
 			asm:    "CP A,B",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.cmp(s.BC.Hi)
 			},
 		},
 
-		// 0xb9
+		// 0xB9
 		{
 			asm:    "CP A,C",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.cmp(s.BC.Lo)
 			},
 		},
 
-		// 0xba
+		// 0xBA
 		{
 			asm:    "CP A,D",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.cmp(s.DE.Hi)
 			},
 		},
 
-		// 0xbb
+		// 0xBB
 		{
 			asm:    "CP A,E",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.cmp(s.DE.Lo)
 			},
 		},
 
-		// 0xbc
+		// 0xBC
 		{
 			asm:    "CP A,H",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.cmp(s.HL.Hi)
 			},
 		},
 
-		// 0xbd
+		// 0xBD
 		{
 			asm:    "CP A,L",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.cmp(s.HL.Lo)
 			},
 		},
 
-		// 0xbe
+		// 0xBE
 		{
 			asm:    "CP A,(HL)",
 			length: 0,
 			cycles: 2,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.cmp(s.ReadFrom(s.HL))
 			},
 		},
 
-		// 0xbf
+		// 0xBF
 		{
 			asm:    "CP A,A",
 			length: 0,
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.cmp(s.AF.Hi)
 			},
 		},
 
-		// 0xc0
+		// 0xC0
 		{
 			asm:    "RET NZ",
 			length: 0,
-			cycles: 2,
+			cycles: 0,
 
 			fn: func(s *State, v Value) {
-
+				if !s.fl.Has(Zero) {
+					s.PC = s.Pop()
+					s.clock.Step(5)
+				} else {
+					s.clock.Step(2)
+				}
 			},
 		},
 
-		// 0xc1
+		// 0xC1
 		{
 			asm:    "POP BC",
 			length: 0,
 			cycles: 3,
 
 			fn: func(s *State, v Value) {
-
+				s.BC.Set(s.Pop())
 			},
 		},
 
-		// 0xc2
+		// 0xC2
 		{
 			asm:    "JP NZ,u16",
 			length: 2,
-			cycles: 3,
+			cycles: 0,
 
 			fn: func(s *State, v Value) {
-
+				if !s.fl.Has(Zero) {
+					s.PC = v.U16()
+					s.clock.Step(4)
+				} else {
+					s.clock.Step(3)
+				}
 			},
 		},
 
-		// 0xc3
+		// 0xC3
 		{
 			asm:    "JP u16",
 			length: 2,
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
-
+				s.PC = v.U16()
 			},
 		},
 
-		// 0xc4
+		// 0xC4
 		{
 			asm:    "CALL NZ,u16",
 			length: 2,
-			cycles: 3,
+			cycles: 0,
 
 			fn: func(s *State, v Value) {
-
+				if !s.fl.Has(Zero) {
+					s.Push(s.PC)
+					s.PC = v.U16()
+					s.clock.Step(6)
+				} else {
+					s.clock.Step(3)
+				}
 			},
 		},
 
-		// 0xc5
+		// 0xC5
 		{
 			asm:    "PUSH BC",
 			length: 0,
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
-
+				s.Push(s.BC.Get())
 			},
 		},
 
-		// 0xc6
+		// 0xC6
 		{
 			asm:    "ADD A,u8",
 			length: 1,
 			cycles: 2,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.add(&s.AF.Hi, v.U8())
 			},
 		},
 
-		// 0xc7
+		// 0xC7
 		{
 			asm:    "RST 00h",
 			length: 0,
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
-
+				s.Push(s.PC)
+				s.PC = 0
 			},
 		},
 
-		// 0xc8
+		// 0xC8
 		{
 			asm:    "RET Z",
 			length: 0,
-			cycles: 2,
+			cycles: 0,
 
 			fn: func(s *State, v Value) {
-
+				if s.fl.Has(Zero) {
+					s.PC = s.Pop()
+					s.clock.Step(5)
+				} else {
+					s.clock.Step(2)
+				}
 			},
 		},
 
-		// 0xc9
+		// 0xC9
 		{
 			asm:    "RET",
 			length: 0,
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
-
+				s.PC = s.Pop()
 			},
 		},
 
-		// 0xca
+		// 0xCA
 		{
 			asm:    "JP Z,u16",
 			length: 2,
 			cycles: 3,
 
 			fn: func(s *State, v Value) {
-
+				if s.fl.Has(Zero) {
+					s.PC = v.U16()
+					s.clock.Step(4)
+				} else {
+					s.clock.Step(3)
+				}
 			},
 		},
 
-		// 0xcb
+		// 0xCB
 		{
 			asm:    "PREFIX CB",
 			length: 0,
 			cycles: 1,
 
-			fn: func(s *State, v Value) {
-
-			},
+			// 0xCB instructions are offset at 0x100 onwards.
+			fn: nop,
 		},
 
-		// 0xcc
+		// 0xCC
 		{
 			asm:    "CALL Z,u16",
 			length: 2,
@@ -2332,7 +2358,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xcd
+		// 0xCD
 		{
 			asm:    "CALL u16",
 			length: 2,
@@ -2343,7 +2369,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xce
+		// 0xCE
 		{
 			asm:    "ADC A,u8",
 			length: 1,
@@ -2354,7 +2380,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xcf
+		// 0xCF
 		{
 			asm:    "RST 08h",
 			length: 0,
@@ -2365,7 +2391,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xd0
+		// 0xD0
 		{
 			asm:    "RET NC",
 			length: 0,
@@ -2376,7 +2402,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xd1
+		// 0xD1
 		{
 			asm:    "POP DE",
 			length: 0,
@@ -2387,7 +2413,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xd2
+		// 0xD2
 		{
 			asm:    "JP NC,u16",
 			length: 2,
@@ -2398,7 +2424,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xd3
+		// 0xD3
 		{
 			asm:    "UNUSED",
 			length: 0,
@@ -2409,7 +2435,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xd4
+		// 0xD4
 		{
 			asm:    "CALL NC,u16",
 			length: 2,
@@ -2420,7 +2446,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xd5
+		// 0xD5
 		{
 			asm:    "PUSH DE",
 			length: 0,
@@ -2431,7 +2457,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xd6
+		// 0xD6
 		{
 			asm:    "SUB A,u8",
 			length: 1,
@@ -2442,7 +2468,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xd7
+		// 0xD7
 		{
 			asm:    "RST 10h",
 			length: 0,
@@ -2453,7 +2479,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xd8
+		// 0xD8
 		{
 			asm:    "RET C",
 			length: 0,
@@ -2464,7 +2490,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xd9
+		// 0xD9
 		{
 			asm:    "RETI",
 			length: 0,
@@ -2475,7 +2501,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xda
+		// 0xDA
 		{
 			asm:    "JP C,u16",
 			length: 2,
@@ -2486,7 +2512,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xdb
+		// 0xDB
 		{
 			asm:    "UNUSED",
 			length: 0,
@@ -2497,7 +2523,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xdc
+		// 0xDC
 		{
 			asm:    "CALL C,u16",
 			length: 2,
@@ -2508,7 +2534,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xdd
+		// 0xDD
 		{
 			asm:    "UNUSED",
 			length: 0,
@@ -2519,7 +2545,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xde
+		// 0xDE
 		{
 			asm:    "SBC A,u8",
 			length: 1,
@@ -2530,7 +2556,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xdf
+		// 0xDF
 		{
 			asm:    "RST 18h",
 			length: 0,
@@ -2541,7 +2567,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xe0
+		// 0xE0
 		{
 			asm:    "LD (FF00+u8),A",
 			length: 1,
@@ -2552,7 +2578,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xe1
+		// 0xE1
 		{
 			asm:    "POP HL",
 			length: 0,
@@ -2563,7 +2589,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xe2
+		// 0xE2
 		{
 			asm:    "LD (FF00+C),A",
 			length: 0,
@@ -2574,7 +2600,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xe3
+		// 0xE3
 		{
 			asm:    "UNUSED",
 			length: 0,
@@ -2585,7 +2611,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xe4
+		// 0xE4
 		{
 			asm:    "UNUSED",
 			length: 0,
@@ -2596,7 +2622,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xe5
+		// 0xE5
 		{
 			asm:    "PUSH HL",
 			length: 0,
@@ -2607,7 +2633,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xe6
+		// 0xE6
 		{
 			asm:    "AND A,u8",
 			length: 1,
@@ -2618,7 +2644,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xe7
+		// 0xE7
 		{
 			asm:    "RST 20h",
 			length: 0,
@@ -2629,7 +2655,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xe8
+		// 0xE8
 		{
 			asm:    "ADD SP,i8",
 			length: 1,
@@ -2640,7 +2666,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xe9
+		// 0xE9
 		{
 			asm:    "JP HL",
 			length: 0,
@@ -2651,7 +2677,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xea
+		// 0xEA
 		{
 			asm:    "LD (u16),A",
 			length: 2,
@@ -2662,7 +2688,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xeb
+		// 0xEB
 		{
 			asm:    "UNUSED",
 			length: 0,
@@ -2673,7 +2699,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xec
+		// 0xEC
 		{
 			asm:    "UNUSED",
 			length: 0,
@@ -2684,7 +2710,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xed
+		// 0xED
 		{
 			asm:    "UNUSED",
 			length: 0,
@@ -2695,7 +2721,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xee
+		// 0xEE
 		{
 			asm:    "XOR A,u8",
 			length: 1,
@@ -2706,7 +2732,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xef
+		// 0xEF
 		{
 			asm:    "RST 28h",
 			length: 0,
@@ -2717,7 +2743,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xf0
+		// 0xF0
 		{
 			asm:    "LD A,(FF00+u8)",
 			length: 1,
@@ -2728,7 +2754,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xf1
+		// 0xF1
 		{
 			asm:    "POP AF",
 			length: 0,
@@ -2739,7 +2765,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xf2
+		// 0xF2
 		{
 			asm:    "LD A,(FF00+C)",
 			length: 0,
@@ -2750,7 +2776,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xf3
+		// 0xF3
 		{
 			asm:    "DI",
 			length: 0,
@@ -2761,7 +2787,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xf4
+		// 0xF4
 		{
 			asm:    "UNUSED",
 			length: 0,
@@ -2772,7 +2798,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xf5
+		// 0xF5
 		{
 			asm:    "PUSH AF",
 			length: 0,
@@ -2783,7 +2809,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xf6
+		// 0xF6
 		{
 			asm:    "OR A,u8",
 			length: 1,
@@ -2794,7 +2820,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xf7
+		// 0xF7
 		{
 			asm:    "RST 30h",
 			length: 0,
@@ -2805,7 +2831,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xf8
+		// 0xF8
 		{
 			asm:    "LD HL,SP+i8",
 			length: 1,
@@ -2816,7 +2842,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xf9
+		// 0xF9
 		{
 			asm:    "LD SP,HL",
 			length: 0,
@@ -2827,7 +2853,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xfa
+		// 0xFA
 		{
 			asm:    "LD A,(u16)",
 			length: 2,
@@ -2838,7 +2864,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xfb
+		// 0xFB
 		{
 			asm:    "EI",
 			length: 0,
@@ -2849,7 +2875,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xfc
+		// 0xFC
 		{
 			asm:    "UNUSED",
 			length: 0,
@@ -2860,7 +2886,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xfd
+		// 0xFD
 		{
 			asm:    "UNUSED",
 			length: 0,
@@ -2871,7 +2897,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xfe
+		// 0xFE
 		{
 			asm:    "CP A,u8",
 			length: 1,
@@ -2882,7 +2908,7 @@ var table = &Table{
 			},
 		},
 
-		// 0xff
+		// 0xFF
 		{
 			asm:    "RST 38h",
 			length: 0,

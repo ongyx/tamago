@@ -4,7 +4,7 @@ import (
 	"math"
 )
 
-type f flag
+type flag uint8
 
 const (
 	Carry flag = 1 << (iota + 4)
@@ -53,92 +53,6 @@ func (fl *Flags) ClearAllExcept(f flag) {
 	fl.r.Lo &= f
 }
 
-func (fl *Flags) inc(reg *uint8) {
-
-	if (*reg & 0x0f) == 0x0f {
-		// third bit is about to be carried over to fourth bit
-		fl.Set(HalfCarry)
-	} else {
-		fl.Clear(HalfCarry)
-	}
-
-	*reg++
-
-	fl.setIfZero(*reg)
-	fl.Clear(Negative)
-
-}
-
-func (fl *Flags) dec(reg *uint8) {
-
-	if (*reg & 0x0f) == 0 {
-		fl.Set(HalfCarry)
-	} else {
-		fl.Clear(HalfCarry)
-	}
-
-	*reg--
-
-	fl.setIfZero(*reg)
-	fl.Set(Negative)
-
-}
-
-func (fl *Flags) add(reg *uint8, v uint8) {
-	result = uint16(*reg) + uint16(v)
-
-	fl.setIfCarry(result &^ math.MaxUint8)
-
-	*reg = uint8(result & math.MaxUint8)
-
-	fl.setIfZero(*reg)
-	fl.setIfHalfCarry(uint(*reg), uint(v))
-	fl.Clear(Negative)
-}
-
-func (fl *Flags) sub(v uint8) {
-	a := fl.r.Hi
-
-	fl.Set(Negative)
-
-	fl.setIfCarry(bit(v > a))
-	fl.setIfHalfCarry(uint(v), uint(a))
-
-	fl.r.Hi -= v
-
-	fl.setIfZero(fl.r.Hi)
-}
-
-func (fl *Flags) adc(v uint8) {
-	a := fl.r.Hi
-
-	v += bit(fl.Has(Carry))
-
-	result := uint16(a) + uint16(v)
-
-	fl.setIfCarry(result &^ math.MaxUint8)
-	fl.setIfZero(result)
-	fl.setIfHalfCarry(uint(v), uint(a))
-
-	fl.Set(Negative)
-
-	fl.r.Hi = uint8(result & math.MaxUint8)
-}
-
-func (fl *Flags) sbc(v uint8) {
-	a := fl.r.Hi
-
-	v += bit(fl.Has(Carry))
-
-	fl.Set(Negative)
-
-	fl.setIfCarry(bit(v > a))
-	fl.setIfZero(bit(v == a))
-	fl.setIfHalfCarry(uint(v), uint(a))
-
-	fl.r.Hi -= v
-}
-
 func (fl *Flags) setIfZero(v uint8) {
 	if v == 0 {
 		fl.Set(Zero)
@@ -155,10 +69,140 @@ func (fl *Flags) setIfCarry(v uint8) {
 	}
 }
 
-func (fl *Flags) setIfHalfCarry(v1, v2 uint) {
-	if ((v1 & 0x0f) + (v2 & 0x0f)) > 0x0f {
+func (fl *Flags) setIfHalfCarry(b bool) {
+	if b {
 		fl.Set(HalfCarry)
 	} else {
 		fl.Clear(HalfCarry)
 	}
+}
+
+func (fl *Flags) inc(reg *uint8) {
+	// third bit is about to be carried over to fourth bit
+	fl.setIfHalfCarry((*reg & 0x0F) == 0x0F)
+
+	*reg++
+
+	fl.setIfZero(*reg)
+
+	fl.Clear(Negative)
+}
+
+func (fl *Flags) dec(reg *uint8) {
+	fl.setIfHalfCarry((*reg & 0x0F) != 0)
+
+	*reg--
+
+	fl.setIfZero(*reg)
+
+	fl.Set(Negative)
+}
+
+func (fl *Flags) add(reg *uint8, v uint8) {
+	result = uint16(*reg) + uint16(v)
+
+	*reg = uint8(result & math.MaxUint8)
+
+	fl.setIfCarry(result &^ math.MaxUint8)
+	fl.setIfHalfCarry(((*reg & 0x0F) + (v & 0x0F)) > 0x0F)
+	fl.setIfZero(*reg)
+
+	fl.Clear(Negative)
+}
+
+func (fl *Flags) adc(v uint8) {
+	a := &fl.r.Hi
+
+	v += bit(fl.Has(Carry))
+
+	result := uint16(*a) + uint16(v)
+
+	fl.Set(Negative)
+
+	fl.setIfCarry(result &^ math.MaxUint8)
+	fl.setIfZero(result)
+
+	fl.setIfHalfCarry(((v & 0x0F) + (*a & 0x0F)) > 0x0F)
+
+	*a = uint8(result & math.MaxUint8)
+}
+
+func (fl *Flags) sub(v uint8) {
+	a := &fl.r.Hi
+
+	*a -= v
+
+	fl.setIfCarry(bit(v > *a))
+	fl.setIfHalfCarry((v & 0x0F) > (*a & 0x0F))
+	fl.setIfZero(*a)
+
+	fl.Set(Negative)
+}
+
+func (fl *Flags) sbc(v uint8) {
+	a := &fl.r.Hi
+
+	v += bit(fl.Has(Carry))
+
+	fl.Set(Negative)
+
+	fl.setIfCarry(bit(v > *a))
+	fl.setIfZero(bit(v == *a))
+	fl.setIfHalfCarry((v & 0x0F) > (*a & 0x0F))
+
+	*a -= v
+}
+
+func (fl *Flags) and(v uint8) {
+	a := &fl.r.Hi
+
+	*a &= v
+
+	fl.setIfZero(*a)
+
+	fl.Set(HalfCarry)
+	fl.Clear(Carry | Negative)
+}
+
+func (fl *Flags) or(v uint8) {
+	a := &fl.r.Hi
+
+	*a |= v
+
+	fl.setIfZero(*a)
+
+	fl.Clear(Carry | HalfCarry | Negative)
+}
+
+func (fl *Flags) xor(v uint8) {
+	a := &fl.r.Hi
+
+	*a ^= v
+
+	fl.setIfZero(a)
+
+	fl.Clear(Carry | HalfCarry | Negative)
+}
+
+func (fl *Flags) cmp(v uint8) {
+	var f flag
+
+	fl.ClearAll()
+
+	switch a := fl.r.Hi; true {
+
+	case a == v:
+		f |= Zero
+		fallthrough
+
+	case v > a:
+		f |= Carry
+		fallthrough
+
+	case (v & 0x0F) > (a & 0x0F):
+		f |= HalfCarry
+
+	}
+
+	fl.Set(f)
 }
