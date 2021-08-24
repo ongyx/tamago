@@ -8,7 +8,6 @@ import (
 
 var (
 	Endian = binary.LittleEndian
-	U16    = struct{}{}
 	logger = log.New(os.Stdout, "", log.Lshortfile)
 )
 
@@ -21,6 +20,8 @@ func bit(b bool) uint8 {
 
 	return v
 }
+
+type U16 struct{}
 
 // Convert two bytes into a single 16-bit unsigned int.
 func (U16) From(lo, hi uint8) uint16 {

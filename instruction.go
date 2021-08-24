@@ -1,5 +1,15 @@
 package tamago
 
+var (
+	nop    = func(s *State, v Value) {}
+	unused = &Instruction{
+		asm:    "UNUSED",
+		length: 0,
+		cycles: 0,
+		fn:     nil,
+	}
+)
+
 // An instruction to execute in the CPU.
 //
 // assembly is the instruction in assembly as text (i.e nop, etc.)
@@ -13,5 +23,5 @@ type Instruction struct {
 	asm    string
 	length uint8
 	cycles uint8
-	fn     func(s *State, v uint16)
+	fn     func(s *State, v Value)
 }

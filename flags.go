@@ -28,23 +28,23 @@ func NewFlags(r *Register) *Flags {
 */
 
 // Check if a flag is set in the register.
-func (fl *Flags) Has(f flag) {
-	return (fl.r.Lo & f) != 0
+func (fl *Flags) Has(f flag) bool {
+	return (fl.r.Lo & uint8(f)) != 0
 }
 
 // Set a flag in the register.
 func (fl *Flags) Set(f flag) {
-	fl.r.Lo |= f
+	fl.r.Lo |= uint8(f)
 }
 
 // Flip a flag in the register.
 func (fl *Flags) Flip(f flag) {
-	fl.r.Lo ^= f
+	fl.r.Lo ^= uint8(f)
 }
 
 // Clear a flag in the register.
 func (fl *Flags) Clear(f flag) {
-	fl.r.Lo &^= f
+	fl.r.Lo &^= uint8(f)
 }
 
 // Clear all flags.
@@ -54,7 +54,7 @@ func (fl *Flags) ClearAll() {
 
 // Clear all flags except for one.
 func (fl *Flags) ClearAllExcept(f flag) {
-	fl.r.Lo &= f
+	fl.r.Lo &= uint8(f)
 }
 
 /*
@@ -221,4 +221,20 @@ func (fl *Flags) cmp(v uint8) {
 	}
 
 	fl.Set(f)
+}
+
+/*
+	0xCB-prefix bitwise functions
+*/
+
+func (fl *Flags) rlc(*v uint8) {
+	carry := *v & 0x80
+
+	fl.setIfCarry(carry)
+
+	*v <<= 1
+	*v += carry >> 7
+
+	fl.setIfZero(*v)
+	fl.Clear(HalfCarry | Negative)
 }
