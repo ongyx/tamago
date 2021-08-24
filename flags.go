@@ -23,6 +23,10 @@ func NewFlags(r *Register) *Flags {
 	return &Flags{r: r}
 }
 
+/*
+	Public functions
+*/
+
 // Check if a flag is set in the register.
 func (fl *Flags) Has(f flag) {
 	return (fl.r.Lo & f) != 0
@@ -53,6 +57,10 @@ func (fl *Flags) ClearAllExcept(f flag) {
 	fl.r.Lo &= f
 }
 
+/*
+	Calculation flag helpers
+*/
+
 func (fl *Flags) setIfZero(v uint8) {
 	if v == 0 {
 		fl.Set(Zero)
@@ -61,8 +69,8 @@ func (fl *Flags) setIfZero(v uint8) {
 	}
 }
 
-func (fl *Flags) setIfCarry(v uint8) {
-	if v != 0 {
+func (fl *Flags) setIfCarry(v interface{}) {
+	if int(v) != 0 {
 		fl.Set(Carry)
 	} else {
 		fl.Clear(Carry)
@@ -76,6 +84,10 @@ func (fl *Flags) setIfHalfCarry(b bool) {
 		fl.Clear(HalfCarry)
 	}
 }
+
+/*
+	Arithmetic functions
+*/
 
 func (fl *Flags) inc(reg *uint8) {
 	// third bit is about to be carried over to fourth bit
@@ -152,6 +164,10 @@ func (fl *Flags) sbc(v uint8) {
 
 	*a -= v
 }
+
+/*
+	Bitwise functions
+*/
 
 func (fl *Flags) and(v uint8) {
 	a := &fl.r.Hi

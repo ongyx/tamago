@@ -4,11 +4,16 @@ type Table struct {
 	ins []Instruction
 }
 
+var unused = &Instruction{
+	asm:    "UNUSED",
+	length: 0,
+	cycles: 0,
+	fn:     nil,
+}
+
 func nop(s *State, v Value) {}
 
-// This table contains all 512 opcodes used in the Game Boy
-// (256 normal, 256 prefixed by 0xCB).
-
+// This table contains opcodes used in the Game Boy.
 var table = &Table{
 	ins: []Instruction{
 
@@ -2290,7 +2295,7 @@ var table = &Table{
 
 			fn: func(s *State, v Value) {
 				s.Push(s.PC)
-				s.PC = 0
+				s.PC = 0x0000
 			},
 		},
 
@@ -2341,7 +2346,7 @@ var table = &Table{
 		{
 			asm:    "PREFIX CB",
 			length: 0,
-			cycles: 1,
+			cycles: 0,
 
 			// 0xCB instructions are offset at 0x100 onwards.
 			fn: nop,
@@ -2351,10 +2356,16 @@ var table = &Table{
 		{
 			asm:    "CALL Z,u16",
 			length: 2,
-			cycles: 3,
+			cycles: 0,
 
 			fn: func(s *State, v Value) {
-
+				if s.fl.Has(Zero) {
+					s.Push(s.PC)
+					s.PC = v.U16()
+					s.clock.Step(6)
+				} else {
+					s.clock.Step(3)
+				}
 			},
 		},
 
@@ -2365,7 +2376,8 @@ var table = &Table{
 			cycles: 6,
 
 			fn: func(s *State, v Value) {
-
+				s.Push(s.PC)
+				s.PC = v.U16()
 			},
 		},
 
@@ -2376,7 +2388,7 @@ var table = &Table{
 			cycles: 2,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.adc(v.U8())
 			},
 		},
 
@@ -2387,7 +2399,8 @@ var table = &Table{
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
-
+				s.Push(s.PC)
+				s.PC = 0x0008
 			},
 		},
 
@@ -2395,10 +2408,15 @@ var table = &Table{
 		{
 			asm:    "RET NC",
 			length: 0,
-			cycles: 2,
+			cycles: 0,
 
 			fn: func(s *State, v Value) {
-
+				if !s.fl.Has(Carry) {
+					s.PC = s.Pop()
+					s.clock.Step(5)
+				} else {
+					s.clock.Step(2)
+				}
 			},
 		},
 
@@ -2409,7 +2427,7 @@ var table = &Table{
 			cycles: 3,
 
 			fn: func(s *State, v Value) {
-
+				s.DE.Set(s.Pop())
 			},
 		},
 
@@ -2420,29 +2438,32 @@ var table = &Table{
 			cycles: 3,
 
 			fn: func(s *State, v Value) {
-
+				if !s.fl.Has(Carry) {
+					s.PC = v.U16()
+					s.clock.Step(4)
+				} else {
+					s.clock.Step(3)
+				}
 			},
 		},
 
 		// 0xD3
-		{
-			asm:    "UNUSED",
-			length: 0,
-			cycles: 0,
-
-			fn: func(s *State, v Value) {
-
-			},
-		},
+		*unused,
 
 		// 0xD4
 		{
 			asm:    "CALL NC,u16",
 			length: 2,
-			cycles: 3,
+			cycles: 0,
 
 			fn: func(s *State, v Value) {
-
+				if !s.fl.Has(Carry) {
+					s.Push(s.PC)
+					s.PC = v.U16()
+					s.clock.Step(6)
+				} else {
+					s.clock.Step(3)
+				}
 			},
 		},
 
@@ -2453,7 +2474,7 @@ var table = &Table{
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
-
+				s.Push(s.DE.Get())
 			},
 		},
 
@@ -2464,7 +2485,7 @@ var table = &Table{
 			cycles: 2,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sub(v.U8())
 			},
 		},
 
@@ -2475,7 +2496,8 @@ var table = &Table{
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
-
+				s.Push(s.PC)
+				s.PC = 0x0010
 			},
 		},
 
@@ -2483,10 +2505,15 @@ var table = &Table{
 		{
 			asm:    "RET C",
 			length: 0,
-			cycles: 2,
+			cycles: 0,
 
 			fn: func(s *State, v Value) {
-
+				if s.fl.Has(Carry) {
+					s.PC = s.Pop()
+					s.clock.Step(5)
+				} else {
+					s.clock.Step(2)
+				}
 			},
 		},
 
@@ -2497,7 +2524,8 @@ var table = &Table{
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
-
+				s.intr.Enable()
+				s.PC = s.Pop()
 			},
 		},
 
@@ -2508,20 +2536,17 @@ var table = &Table{
 			cycles: 3,
 
 			fn: func(s *State, v Value) {
-
+				if s.fl.Has(Carry) {
+					s.PC = v.U16()
+					s.clock.Step(4)
+				} else {
+					s.clock.Step(3)
+				}
 			},
 		},
 
 		// 0xDB
-		{
-			asm:    "UNUSED",
-			length: 0,
-			cycles: 0,
-
-			fn: func(s *State, v Value) {
-
-			},
-		},
+		*unused,
 
 		// 0xDC
 		{
@@ -2530,20 +2555,18 @@ var table = &Table{
 			cycles: 3,
 
 			fn: func(s *State, v Value) {
-
+				if s.fl.Has(Carry) {
+					s.Push(s.PC)
+					s.PC = v.U16()
+					s.clock.Step(6)
+				} else {
+					s.clock.Step(3)
+				}
 			},
 		},
 
 		// 0xDD
-		{
-			asm:    "UNUSED",
-			length: 0,
-			cycles: 0,
-
-			fn: func(s *State, v Value) {
-
-			},
-		},
+		*unused,
 
 		// 0xDE
 		{
@@ -2552,7 +2575,7 @@ var table = &Table{
 			cycles: 2,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.sbc(v.U8())
 			},
 		},
 
@@ -2563,7 +2586,8 @@ var table = &Table{
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
-
+				s.Push(s.PC)
+				s.PC = 0x0018
 			},
 		},
 
@@ -2574,7 +2598,7 @@ var table = &Table{
 			cycles: 3,
 
 			fn: func(s *State, v Value) {
-
+				s.Write(uint16(0xFF00)+uint16(v.U8()), s.AF.Hi)
 			},
 		},
 
@@ -2585,7 +2609,7 @@ var table = &Table{
 			cycles: 3,
 
 			fn: func(s *State, v Value) {
-
+				s.HL.Set(s.Pop())
 			},
 		},
 
@@ -2596,31 +2620,15 @@ var table = &Table{
 			cycles: 2,
 
 			fn: func(s *State, v Value) {
-
+				s.Write(uint16(0xFF00)+uint16(s.BC.Lo), s.AF.Hi)
 			},
 		},
 
 		// 0xE3
-		{
-			asm:    "UNUSED",
-			length: 0,
-			cycles: 0,
-
-			fn: func(s *State, v Value) {
-
-			},
-		},
+		*unused,
 
 		// 0xE4
-		{
-			asm:    "UNUSED",
-			length: 0,
-			cycles: 0,
-
-			fn: func(s *State, v Value) {
-
-			},
-		},
+		*unused,
 
 		// 0xE5
 		{
@@ -2629,7 +2637,7 @@ var table = &Table{
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
-
+				s.Push(s.HL.Get())
 			},
 		},
 
@@ -2640,7 +2648,7 @@ var table = &Table{
 			cycles: 2,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.and(v.U8())
 			},
 		},
 
@@ -2651,7 +2659,8 @@ var table = &Table{
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
-
+				s.Push(s.PC)
+				s.PC = 0x0020
 			},
 		},
 
@@ -2662,7 +2671,15 @@ var table = &Table{
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
+				result := int(s.SP) + int(v.S8())
 
+				s.fl.setIfCarry(result & 0xffff0000)
+
+				s.SP = result & 0xFFFF
+
+				s.fl.setIfHalfCarry(((s.SP & 0x0F) + (v.S8() & 0x0F)) > 0x0F)
+
+				s.fl.Clear(Zero | Negative)
 			},
 		},
 
@@ -2673,7 +2690,7 @@ var table = &Table{
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.PC = s.HL.Get()
 			},
 		},
 
@@ -2684,42 +2701,18 @@ var table = &Table{
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
-
+				s.Write(v.U16(), s.AF.Hi)
 			},
 		},
 
 		// 0xEB
-		{
-			asm:    "UNUSED",
-			length: 0,
-			cycles: 0,
-
-			fn: func(s *State, v Value) {
-
-			},
-		},
+		*unused,
 
 		// 0xEC
-		{
-			asm:    "UNUSED",
-			length: 0,
-			cycles: 0,
-
-			fn: func(s *State, v Value) {
-
-			},
-		},
+		*unused,
 
 		// 0xED
-		{
-			asm:    "UNUSED",
-			length: 0,
-			cycles: 0,
-
-			fn: func(s *State, v Value) {
-
-			},
-		},
+		*unused,
 
 		// 0xEE
 		{
@@ -2728,7 +2721,7 @@ var table = &Table{
 			cycles: 2,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.xor(v.U8())
 			},
 		},
 
@@ -2739,7 +2732,8 @@ var table = &Table{
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
-
+				s.Push(s.PC)
+				s.PC = 0x0028
 			},
 		},
 
@@ -2750,7 +2744,7 @@ var table = &Table{
 			cycles: 3,
 
 			fn: func(s *State, v Value) {
-
+				s.AF.Hi = s.Read(0xFF00 + v.U8())
 			},
 		},
 
@@ -2761,7 +2755,7 @@ var table = &Table{
 			cycles: 3,
 
 			fn: func(s *State, v Value) {
-
+				s.AF.Set(s.Pop())
 			},
 		},
 
@@ -2772,7 +2766,7 @@ var table = &Table{
 			cycles: 2,
 
 			fn: func(s *State, v Value) {
-
+				s.AF.Hi = s.Read(0xFF00 + s.BC.Lo)
 			},
 		},
 
@@ -2783,20 +2777,12 @@ var table = &Table{
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.intr.Disable()
 			},
 		},
 
 		// 0xF4
-		{
-			asm:    "UNUSED",
-			length: 0,
-			cycles: 0,
-
-			fn: func(s *State, v Value) {
-
-			},
-		},
+		*unused,
 
 		// 0xF5
 		{
@@ -2805,7 +2791,7 @@ var table = &Table{
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
-
+				s.Push(s.AF.Get())
 			},
 		},
 
@@ -2816,7 +2802,7 @@ var table = &Table{
 			cycles: 2,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.or(v.U8())
 			},
 		},
 
@@ -2827,7 +2813,8 @@ var table = &Table{
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
-
+				s.Push(s.PC)
+				s.PC = 0x0030
 			},
 		},
 
@@ -2838,7 +2825,14 @@ var table = &Table{
 			cycles: 3,
 
 			fn: func(s *State, v Value) {
+				result := int(s.SP) + int(v.S8())
 
+				s.fl.setIfCarry(result & 0xFFFF0000)
+				s.fl.setIfHalfCarry(((s.SP & 0x0F) + (v.S8() & 0x0F)) > 0x0F)
+
+				s.fl.Clear(Zero | Negative)
+
+				s.HL.Set(uint16(result & 0xFFFF))
 			},
 		},
 
@@ -2849,7 +2843,7 @@ var table = &Table{
 			cycles: 2,
 
 			fn: func(s *State, v Value) {
-
+				s.SP = s.HL.Get()
 			},
 		},
 
@@ -2860,7 +2854,7 @@ var table = &Table{
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
-
+				s.AF.Hi = s.Read(v.U16())
 			},
 		},
 
@@ -2871,31 +2865,15 @@ var table = &Table{
 			cycles: 1,
 
 			fn: func(s *State, v Value) {
-
+				s.intr.Enable()
 			},
 		},
 
 		// 0xFC
-		{
-			asm:    "UNUSED",
-			length: 0,
-			cycles: 0,
-
-			fn: func(s *State, v Value) {
-
-			},
-		},
+		*unused,
 
 		// 0xFD
-		{
-			asm:    "UNUSED",
-			length: 0,
-			cycles: 0,
-
-			fn: func(s *State, v Value) {
-
-			},
-		},
+		*unused,
 
 		// 0xFE
 		{
@@ -2904,7 +2882,7 @@ var table = &Table{
 			cycles: 2,
 
 			fn: func(s *State, v Value) {
-
+				s.fl.cmp(v.U8())
 			},
 		},
 
@@ -2915,7 +2893,8 @@ var table = &Table{
 			cycles: 4,
 
 			fn: func(s *State, v Value) {
-
+				s.Push(s.PC)
+				s.PC = 0x0038
 			},
 		},
 	},

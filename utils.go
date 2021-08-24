@@ -2,12 +2,14 @@ package tamago
 
 import (
 	"encoding/binary"
+	"log"
+	"os"
 )
 
 var (
 	Endian = binary.LittleEndian
-
-	U16 = struct{}{}
+	U16    = struct{}{}
+	logger = log.New(os.Stdout, "", log.Lshortfile)
 )
 
 // Convert a boolean into 0 if false or 1 if true.

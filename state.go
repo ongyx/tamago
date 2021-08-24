@@ -6,6 +6,7 @@ type State struct {
 	SP, PC         uint16
 
 	fl      *Flags
+	intr    *Interrupt
 	clock   *Clock
 	mmu     *MMU
 	gpu     *GPU
@@ -20,6 +21,7 @@ func NewState() *State {
 	s.HL = NewRegister()
 
 	s.fl = NewFlags(s.AF)
+	s.intr = NewInterrupt()
 	s.clock = NewClock()
 	s.mmu = NewMMU()
 	s.gpu = NewGPU()
