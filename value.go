@@ -19,5 +19,5 @@ func (v Value) U8() uint8 {
 }
 
 func (v Value) U16() uint16 {
-	return U16.From(raw[0], raw[1])
+	return U16.From(v.raw[0], v.raw[1])
 }

@@ -28,7 +28,7 @@ func (i *Interrupt) Disable() {
 	i.master = false
 }
 
-func (i *Interrupt) Enabled() {
+func (i *Interrupt) Enabled() bool {
 	return i.master && i.enable
 }
 

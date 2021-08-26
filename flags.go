@@ -70,7 +70,7 @@ func (fl *Flags) setIfZero(v uint8) {
 }
 
 func (fl *Flags) setIfCarry(v interface{}) {
-	if int(v) != 0 {
+	if v.(int) != 0 {
 		fl.Set(Carry)
 	} else {
 		fl.Clear(Carry)
@@ -91,7 +91,7 @@ func (fl *Flags) setIfHalfCarry(b bool) {
 
 func (fl *Flags) inc(reg *uint8) {
 	// third bit is about to be carried over to fourth bit
-	fl.setIfHalfCarry((*reg & 0x0F) == 0x0F)
+	fl.setIfHalfCarry((*reg & 0x0f) == 0x0F)
 
 	*reg++
 
@@ -101,7 +101,7 @@ func (fl *Flags) inc(reg *uint8) {
 }
 
 func (fl *Flags) dec(reg *uint8) {
-	fl.setIfHalfCarry((*reg & 0x0F) != 0)
+	fl.setIfHalfCarry((*reg & 0x0f) != 0)
 
 	*reg--
 
@@ -111,12 +111,12 @@ func (fl *Flags) dec(reg *uint8) {
 }
 
 func (fl *Flags) add(reg *uint8, v uint8) {
-	result = uint16(*reg) + uint16(v)
+	result := uint16(*reg) + uint16(v)
 
 	*reg = uint8(result & math.MaxUint8)
 
 	fl.setIfCarry(result &^ math.MaxUint8)
-	fl.setIfHalfCarry(((*reg & 0x0F) + (v & 0x0F)) > 0x0F)
+	fl.setIfHalfCarry(((*reg & 0x0f) + (v & 0x0F)) > 0x0F)
 	fl.setIfZero(*reg)
 
 	fl.Clear(Negative)
@@ -125,16 +125,16 @@ func (fl *Flags) add(reg *uint8, v uint8) {
 func (fl *Flags) adc(v uint8) {
 	a := &fl.r.Hi
 
-	v += bit(fl.Has(Carry))
+	v += tobit(fl.Has(Carry))
 
 	result := uint16(*a) + uint16(v)
 
 	fl.Set(Negative)
 
 	fl.setIfCarry(result &^ math.MaxUint8)
-	fl.setIfZero(result)
+	fl.setIfZero(uint8(result & math.MaxUint8))
 
-	fl.setIfHalfCarry(((v & 0x0F) + (*a & 0x0F)) > 0x0F)
+	fl.setIfHalfCarry(((v & 0x0f) + (*a & 0x0F)) > 0x0F)
 
 	*a = uint8(result & math.MaxUint8)
 }
@@ -144,8 +144,8 @@ func (fl *Flags) sub(v uint8) {
 
 	*a -= v
 
-	fl.setIfCarry(bit(v > *a))
-	fl.setIfHalfCarry((v & 0x0F) > (*a & 0x0F))
+	fl.setIfCarry(tobit(v > *a))
+	fl.setIfHalfCarry((v & 0x0f) > (*a & 0x0F))
 	fl.setIfZero(*a)
 
 	fl.Set(Negative)
@@ -154,13 +154,13 @@ func (fl *Flags) sub(v uint8) {
 func (fl *Flags) sbc(v uint8) {
 	a := &fl.r.Hi
 
-	v += bit(fl.Has(Carry))
+	v += tobit(fl.Has(Carry))
 
 	fl.Set(Negative)
 
-	fl.setIfCarry(bit(v > *a))
-	fl.setIfZero(bit(v == *a))
-	fl.setIfHalfCarry((v & 0x0F) > (*a & 0x0F))
+	fl.setIfCarry(tobit(v > *a))
+	fl.setIfZero(tobit(v == *a))
+	fl.setIfHalfCarry((v & 0x0f) > (*a & 0x0F))
 
 	*a -= v
 }
@@ -195,7 +195,7 @@ func (fl *Flags) xor(v uint8) {
 
 	*a ^= v
 
-	fl.setIfZero(a)
+	fl.setIfZero(*a)
 
 	fl.Clear(Carry | HalfCarry | Negative)
 }
@@ -215,7 +215,7 @@ func (fl *Flags) cmp(v uint8) {
 		f |= Carry
 		fallthrough
 
-	case (v & 0x0F) > (a & 0x0F):
+	case (v & 0x0f) > (a & 0x0F):
 		f |= HalfCarry
 
 	}
@@ -224,10 +224,10 @@ func (fl *Flags) cmp(v uint8) {
 }
 
 /*
-	0xCB-prefix bitwise functions
+	0xcb-prefix bitwise functions
 */
 
-func (fl *Flags) rlc(*v uint8) {
+func (fl *Flags) rlc(v *uint8) {
 	carry := *v & 0x80
 
 	fl.setIfCarry(carry)
@@ -237,4 +237,98 @@ func (fl *Flags) rlc(*v uint8) {
 
 	fl.setIfZero(*v)
 	fl.Clear(HalfCarry | Negative)
+}
+
+func (fl *Flags) rrc(v *uint8) {
+	carry := *v & 0x01
+
+	// Shift right by one and put back the carry bit.
+	*v >>= 1
+	*v |= (carry << 7)
+
+	fl.setIfCarry(carry)
+	fl.setIfZero(*v)
+
+	fl.Clear(HalfCarry | Negative)
+}
+
+func (fl *Flags) rl(v *uint8) {
+	carry := tobit(fl.Has(Carry))
+
+	// Check if the 7th bit is about to be discarded.
+	fl.setIfCarry(*v & 0x80)
+
+	*v <<= 1
+	*v += carry
+
+	fl.setIfZero(*v)
+
+	fl.Clear(HalfCarry | Negative)
+}
+
+func (fl *Flags) rr(v *uint8) {
+	// Shift v right and add back the carry if any.
+	*v >>= 1
+	*v |= tobit(fl.Has(Carry)) << 7
+
+	fl.setIfCarry(*v & 0x01)
+	fl.setIfZero(*v)
+
+	fl.Clear(HalfCarry | Negative)
+}
+
+func (fl *Flags) sla(v *uint8) {
+	fl.setIfCarry(*v & 0x80)
+
+	*v <<= 1
+
+	fl.setIfZero(*v)
+
+	fl.Clear(HalfCarry | Negative)
+}
+
+func (fl *Flags) sra(v *uint8) {
+	fl.setIfCarry(*v & 0x01)
+
+	// only keep the 7th bit
+	// i.e 10000010 -> 11000001
+	*v = (*v & 0x80) | (*v >> 1)
+
+	fl.setIfZero(*v)
+
+	fl.Clear(HalfCarry | Negative)
+}
+
+func (fl *Flags) swap(v *uint8) {
+	lo := *v & 0x0f
+	hi := *v & 0xf0
+	*v = lo<<4 | hi>>4
+
+	fl.setIfZero(*v)
+	fl.Clear(Carry | HalfCarry | Negative)
+}
+
+func (fl *Flags) srl(v *uint8) {
+	fl.setIfCarry(*v & 0x01)
+
+	*v >>= 1
+
+	fl.setIfZero(*v)
+
+	fl.Clear(HalfCarry | Negative)
+}
+
+func (fl *Flags) bit(pos uint8, v *uint8) {
+	fl.setIfZero(*v & (1 << pos))
+
+	fl.Set(HalfCarry)
+	fl.Clear(Negative)
+}
+
+func (fl *Flags) res(pos uint8, v *uint8) {
+	*v &^= (1 << pos)
+}
+
+func (fl *Flags) set(pos uint8, v *uint8) {
+	*v |= (1 << pos)
 }

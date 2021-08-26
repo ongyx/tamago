@@ -15,10 +15,6 @@ type Register struct {
 	Hi, Lo uint8
 }
 
-func NewRegister() *Register {
-	return &Register{}
-}
-
 func (r *Register) Get() uint16 {
 	return U16.From(r.Lo, r.Hi)
 }
@@ -45,6 +41,6 @@ func (r *Register) Add(v uint16, fl *Flags) {
 	// Truncate any overflow.
 	r.Set(uint16(result & math.MaxUint16))
 
-	fl.setIfHalfCarry(uint(r.Get()), uint(v))
+	fl.setIfHalfCarry(((r.Get() & 0x0f) + (v & 0x0f)) > 0x0f)
 	fl.Clear(Negative)
 }

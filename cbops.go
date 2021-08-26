@@ -1,2823 +1,2885 @@
 package tamago
 
-// This table contains the extended instructions (prefixed with 0xCB) used by the Game Boy.
-var xtable = &Table{
-	ins: []Instruction{
+// This table contains the extended instructions (prefixed with 0xcb) used by the Game Boy.
+var cbops = [256]Instruction{
 
-		// 0x00
-		{
-			asm:    "RLC B",
-			length: 2,
-			cycles: 2,
+	// 0x00
+	{
+		asm:    "RLC B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rlc(&s.BC.Hi)
 		},
-
-		// 0x01
-		{
-			asm:    "RLC C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x01
+	{
+		asm:    "RLC C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rlc(&s.BC.Lo)
 		},
+	},
 
-		// 0x02
-		{
-			asm:    "RLC D",
-			length: 2,
-			cycles: 2,
+	// 0x02
+	{
+		asm:    "RLC D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rlc(&s.DE.Hi)
 		},
-
-		// 0x03
-		{
-			asm:    "RLC E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x03
+	{
+		asm:    "RLC E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rlc(&s.DE.Lo)
 		},
+	},
 
-		// 0x04
-		{
-			asm:    "RLC H",
-			length: 2,
-			cycles: 2,
+	// 0x04
+	{
+		asm:    "RLC H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rlc(&s.HL.Hi)
 		},
-
-		// 0x05
-		{
-			asm:    "RLC L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x05
+	{
+		asm:    "RLC L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rlc(&s.HL.Lo)
 		},
+	},
 
-		// 0x06
-		{
-			asm:    "RLC (HL)",
-			length: 2,
-			cycles: 4,
+	// 0x06
+	{
+		asm:    "RLC (HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.rlc(&b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x07
-		{
-			asm:    "RLC A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x07
+	{
+		asm:    "RLC A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rlc(&s.AF.Hi)
 		},
+	},
 
-		// 0x08
-		{
-			asm:    "RRC B",
-			length: 2,
-			cycles: 2,
+	// 0x08
+	{
+		asm:    "RRC B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rrc(&s.BC.Hi)
 		},
-
-		// 0x09
-		{
-			asm:    "RRC C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x09
+	{
+		asm:    "RRC C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rrc(&s.BC.Lo)
 		},
+	},
 
-		// 0x0A
-		{
-			asm:    "RRC D",
-			length: 2,
-			cycles: 2,
+	// 0x0a
+	{
+		asm:    "RRC D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rrc(&s.DE.Hi)
 		},
-
-		// 0x0B
-		{
-			asm:    "RRC E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x0b
+	{
+		asm:    "RRC E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rrc(&s.DE.Lo)
 		},
+	},
 
-		// 0x0C
-		{
-			asm:    "RRC H",
-			length: 2,
-			cycles: 2,
+	// 0x0c
+	{
+		asm:    "RRC H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rrc(&s.HL.Hi)
 		},
-
-		// 0x0D
-		{
-			asm:    "RRC L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x0d
+	{
+		asm:    "RRC L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rrc(&s.HL.Lo)
 		},
+	},
 
-		// 0x0E
-		{
-			asm:    "RRC (HL)",
-			length: 2,
-			cycles: 4,
+	// 0x0e
+	{
+		asm:    "RRC (HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.rrc(&b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x0F
-		{
-			asm:    "RRC A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x0f
+	{
+		asm:    "RRC A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rrc(&s.AF.Hi)
 		},
+	},
 
-		// 0x10
-		{
-			asm:    "RL B",
-			length: 2,
-			cycles: 2,
+	// 0x10
+	{
+		asm:    "RL B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rl(&s.BC.Hi)
 		},
-
-		// 0x11
-		{
-			asm:    "RL C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x11
+	{
+		asm:    "RL C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rl(&s.BC.Lo)
 		},
+	},
 
-		// 0x12
-		{
-			asm:    "RL D",
-			length: 2,
-			cycles: 2,
+	// 0x12
+	{
+		asm:    "RL D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rl(&s.DE.Hi)
 		},
-
-		// 0x13
-		{
-			asm:    "RL E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x13
+	{
+		asm:    "RL E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rl(&s.DE.Lo)
 		},
+	},
 
-		// 0x14
-		{
-			asm:    "RL H",
-			length: 2,
-			cycles: 2,
+	// 0x14
+	{
+		asm:    "RL H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rl(&s.HL.Hi)
 		},
-
-		// 0x15
-		{
-			asm:    "RL L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x15
+	{
+		asm:    "RL L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rl(&s.HL.Lo)
 		},
+	},
 
-		// 0x16
-		{
-			asm:    "RL (HL)",
-			length: 2,
-			cycles: 4,
+	// 0x16
+	{
+		asm:    "RL (HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.rl(&b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x17
-		{
-			asm:    "RL A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x17
+	{
+		asm:    "RL A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rl(&s.AF.Hi)
 		},
+	},
 
-		// 0x18
-		{
-			asm:    "RR B",
-			length: 2,
-			cycles: 2,
+	// 0x18
+	{
+		asm:    "RR B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rr(&s.BC.Hi)
 		},
-
-		// 0x19
-		{
-			asm:    "RR C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x19
+	{
+		asm:    "RR C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rr(&s.BC.Lo)
 		},
+	},
 
-		// 0x1A
-		{
-			asm:    "RR D",
-			length: 2,
-			cycles: 2,
+	// 0x1a
+	{
+		asm:    "RR D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rr(&s.DE.Hi)
 		},
-
-		// 0x1B
-		{
-			asm:    "RR E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x1b
+	{
+		asm:    "RR E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rr(&s.DE.Lo)
 		},
+	},
 
-		// 0x1C
-		{
-			asm:    "RR H",
-			length: 2,
-			cycles: 2,
+	// 0x1c
+	{
+		asm:    "RR H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rr(&s.HL.Hi)
 		},
-
-		// 0x1D
-		{
-			asm:    "RR L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x1d
+	{
+		asm:    "RR L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rr(&s.HL.Lo)
 		},
+	},
 
-		// 0x1E
-		{
-			asm:    "RR (HL)",
-			length: 2,
-			cycles: 4,
+	// 0x1e
+	{
+		asm:    "RR (HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.rr(&b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x1F
-		{
-			asm:    "RR A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x1f
+	{
+		asm:    "RR A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.rr(&s.AF.Hi)
 		},
+	},
 
-		// 0x20
-		{
-			asm:    "SLA B",
-			length: 2,
-			cycles: 2,
+	// 0x20
+	{
+		asm:    "SLA B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.sla(&s.BC.Hi)
 		},
-
-		// 0x21
-		{
-			asm:    "SLA C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x21
+	{
+		asm:    "SLA C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.sla(&s.BC.Lo)
 		},
+	},
 
-		// 0x22
-		{
-			asm:    "SLA D",
-			length: 2,
-			cycles: 2,
+	// 0x22
+	{
+		asm:    "SLA D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.sla(&s.DE.Hi)
 		},
-
-		// 0x23
-		{
-			asm:    "SLA E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x23
+	{
+		asm:    "SLA E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.sla(&s.DE.Lo)
 		},
+	},
 
-		// 0x24
-		{
-			asm:    "SLA H",
-			length: 2,
-			cycles: 2,
+	// 0x24
+	{
+		asm:    "SLA H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.sla(&s.HL.Hi)
 		},
-
-		// 0x25
-		{
-			asm:    "SLA L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x25
+	{
+		asm:    "SLA L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.sla(&s.HL.Lo)
 		},
+	},
 
-		// 0x26
-		{
-			asm:    "SLA (HL)",
-			length: 2,
-			cycles: 4,
+	// 0x26
+	{
+		asm:    "SLA (HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.sla(&b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x27
-		{
-			asm:    "SLA A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x27
+	{
+		asm:    "SLA A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.sla(&s.AF.Hi)
 		},
+	},
 
-		// 0x28
-		{
-			asm:    "SRA B",
-			length: 2,
-			cycles: 2,
+	// 0x28
+	{
+		asm:    "SRA B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.sra(&s.BC.Hi)
 		},
-
-		// 0x29
-		{
-			asm:    "SRA C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x29
+	{
+		asm:    "SRA C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.sra(&s.BC.Lo)
 		},
+	},
 
-		// 0x2A
-		{
-			asm:    "SRA D",
-			length: 2,
-			cycles: 2,
+	// 0x2a
+	{
+		asm:    "SRA D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.sra(&s.DE.Hi)
 		},
-
-		// 0x2B
-		{
-			asm:    "SRA E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x2b
+	{
+		asm:    "SRA E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.sra(&s.DE.Lo)
 		},
+	},
 
-		// 0x2C
-		{
-			asm:    "SRA H",
-			length: 2,
-			cycles: 2,
+	// 0x2c
+	{
+		asm:    "SRA H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.sra(&s.HL.Hi)
 		},
-
-		// 0x2D
-		{
-			asm:    "SRA L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x2d
+	{
+		asm:    "SRA L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.sra(&s.HL.Lo)
 		},
+	},
 
-		// 0x2E
-		{
-			asm:    "SRA (HL)",
-			length: 2,
-			cycles: 4,
+	// 0x2e
+	{
+		asm:    "SRA (HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.sra(&b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x2F
-		{
-			asm:    "SRA A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x2f
+	{
+		asm:    "SRA A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.sra(&s.AF.Hi)
 		},
+	},
 
-		// 0x30
-		{
-			asm:    "SWAP B",
-			length: 2,
-			cycles: 2,
+	// 0x30
+	{
+		asm:    "SWAP B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.swap(&s.BC.Hi)
 		},
-
-		// 0x31
-		{
-			asm:    "SWAP C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x31
+	{
+		asm:    "SWAP C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.swap(&s.BC.Lo)
 		},
+	},
 
-		// 0x32
-		{
-			asm:    "SWAP D",
-			length: 2,
-			cycles: 2,
+	// 0x32
+	{
+		asm:    "SWAP D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.swap(&s.DE.Hi)
 		},
-
-		// 0x33
-		{
-			asm:    "SWAP E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x33
+	{
+		asm:    "SWAP E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.swap(&s.DE.Lo)
 		},
+	},
 
-		// 0x34
-		{
-			asm:    "SWAP H",
-			length: 2,
-			cycles: 2,
+	// 0x34
+	{
+		asm:    "SWAP H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.swap(&s.HL.Hi)
 		},
-
-		// 0x35
-		{
-			asm:    "SWAP L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x35
+	{
+		asm:    "SWAP L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.swap(&s.HL.Lo)
 		},
+	},
 
-		// 0x36
-		{
-			asm:    "SWAP (HL)",
-			length: 2,
-			cycles: 4,
+	// 0x36
+	{
+		asm:    "SWAP (HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.swap(&b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x37
-		{
-			asm:    "SWAP A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x37
+	{
+		asm:    "SWAP A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.swap(&s.AF.Hi)
 		},
+	},
 
-		// 0x38
-		{
-			asm:    "SRL B",
-			length: 2,
-			cycles: 2,
+	// 0x38
+	{
+		asm:    "SRL B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.srl(&s.BC.Hi)
 		},
-
-		// 0x39
-		{
-			asm:    "SRL C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x39
+	{
+		asm:    "SRL C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.srl(&s.BC.Lo)
 		},
+	},
 
-		// 0x3A
-		{
-			asm:    "SRL D",
-			length: 2,
-			cycles: 2,
+	// 0x3a
+	{
+		asm:    "SRL D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.srl(&s.DE.Hi)
 		},
-
-		// 0x3B
-		{
-			asm:    "SRL E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x3b
+	{
+		asm:    "SRL E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.srl(&s.DE.Lo)
 		},
+	},
 
-		// 0x3C
-		{
-			asm:    "SRL H",
-			length: 2,
-			cycles: 2,
+	// 0x3c
+	{
+		asm:    "SRL H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.srl(&s.HL.Hi)
 		},
-
-		// 0x3D
-		{
-			asm:    "SRL L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x3d
+	{
+		asm:    "SRL L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.srl(&s.HL.Lo)
 		},
+	},
 
-		// 0x3E
-		{
-			asm:    "SRL (HL)",
-			length: 2,
-			cycles: 4,
+	// 0x3e
+	{
+		asm:    "SRL (HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.srl(&b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x3F
-		{
-			asm:    "SRL A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x3f
+	{
+		asm:    "SRL A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.srl(&s.AF.Hi)
 		},
+	},
 
-		// 0x40
-		{
-			asm:    "BIT 0,B",
-			length: 2,
-			cycles: 2,
+	// 0x40
+	{
+		asm:    "BIT 0,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(0, &s.BC.Hi)
 		},
-
-		// 0x41
-		{
-			asm:    "BIT 0,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x41
+	{
+		asm:    "BIT 0,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(0, &s.BC.Lo)
 		},
+	},
 
-		// 0x42
-		{
-			asm:    "BIT 0,D",
-			length: 2,
-			cycles: 2,
+	// 0x42
+	{
+		asm:    "BIT 0,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(0, &s.DE.Hi)
 		},
-
-		// 0x43
-		{
-			asm:    "BIT 0,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x43
+	{
+		asm:    "BIT 0,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(0, &s.DE.Lo)
 		},
+	},
 
-		// 0x44
-		{
-			asm:    "BIT 0,H",
-			length: 2,
-			cycles: 2,
+	// 0x44
+	{
+		asm:    "BIT 0,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(0, &s.HL.Hi)
 		},
-
-		// 0x45
-		{
-			asm:    "BIT 0,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x45
+	{
+		asm:    "BIT 0,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(0, &s.HL.Lo)
 		},
+	},
 
-		// 0x46
-		{
-			asm:    "BIT 0,(HL)",
-			length: 2,
-			cycles: 3,
+	// 0x46
+	{
+		asm:    "BIT 0,(HL)",
+		length: 0,
+		cycles: 3,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.bit(0, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x47
-		{
-			asm:    "BIT 0,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x47
+	{
+		asm:    "BIT 0,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(0, &s.AF.Hi)
 		},
+	},
 
-		// 0x48
-		{
-			asm:    "BIT 1,B",
-			length: 2,
-			cycles: 2,
+	// 0x48
+	{
+		asm:    "BIT 1,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(1, &s.BC.Hi)
 		},
-
-		// 0x49
-		{
-			asm:    "BIT 1,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x49
+	{
+		asm:    "BIT 1,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(1, &s.BC.Lo)
 		},
+	},
 
-		// 0x4A
-		{
-			asm:    "BIT 1,D",
-			length: 2,
-			cycles: 2,
+	// 0x4a
+	{
+		asm:    "BIT 1,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(1, &s.DE.Hi)
 		},
-
-		// 0x4B
-		{
-			asm:    "BIT 1,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x4b
+	{
+		asm:    "BIT 1,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(1, &s.DE.Lo)
 		},
+	},
 
-		// 0x4C
-		{
-			asm:    "BIT 1,H",
-			length: 2,
-			cycles: 2,
+	// 0x4c
+	{
+		asm:    "BIT 1,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(1, &s.HL.Hi)
 		},
-
-		// 0x4D
-		{
-			asm:    "BIT 1,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x4d
+	{
+		asm:    "BIT 1,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(1, &s.HL.Lo)
 		},
+	},
 
-		// 0x4E
-		{
-			asm:    "BIT 1,(HL)",
-			length: 2,
-			cycles: 3,
+	// 0x4e
+	{
+		asm:    "BIT 1,(HL)",
+		length: 0,
+		cycles: 3,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.bit(1, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x4F
-		{
-			asm:    "BIT 1,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x4f
+	{
+		asm:    "BIT 1,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(1, &s.AF.Hi)
 		},
+	},
 
-		// 0x50
-		{
-			asm:    "BIT 2,B",
-			length: 2,
-			cycles: 2,
+	// 0x50
+	{
+		asm:    "BIT 2,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(2, &s.BC.Hi)
 		},
-
-		// 0x51
-		{
-			asm:    "BIT 2,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x51
+	{
+		asm:    "BIT 2,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(2, &s.BC.Lo)
 		},
+	},
 
-		// 0x52
-		{
-			asm:    "BIT 2,D",
-			length: 2,
-			cycles: 2,
+	// 0x52
+	{
+		asm:    "BIT 2,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(2, &s.DE.Hi)
 		},
-
-		// 0x53
-		{
-			asm:    "BIT 2,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x53
+	{
+		asm:    "BIT 2,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(2, &s.DE.Lo)
 		},
+	},
 
-		// 0x54
-		{
-			asm:    "BIT 2,H",
-			length: 2,
-			cycles: 2,
+	// 0x54
+	{
+		asm:    "BIT 2,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(2, &s.HL.Hi)
 		},
-
-		// 0x55
-		{
-			asm:    "BIT 2,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x55
+	{
+		asm:    "BIT 2,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(2, &s.HL.Lo)
 		},
+	},
 
-		// 0x56
-		{
-			asm:    "BIT 2,(HL)",
-			length: 2,
-			cycles: 3,
+	// 0x56
+	{
+		asm:    "BIT 2,(HL)",
+		length: 0,
+		cycles: 3,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.bit(2, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x57
-		{
-			asm:    "BIT 2,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x57
+	{
+		asm:    "BIT 2,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(2, &s.AF.Hi)
 		},
+	},
 
-		// 0x58
-		{
-			asm:    "BIT 3,B",
-			length: 2,
-			cycles: 2,
+	// 0x58
+	{
+		asm:    "BIT 3,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(3, &s.BC.Hi)
 		},
-
-		// 0x59
-		{
-			asm:    "BIT 3,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x59
+	{
+		asm:    "BIT 3,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(3, &s.BC.Lo)
 		},
+	},
 
-		// 0x5A
-		{
-			asm:    "BIT 3,D",
-			length: 2,
-			cycles: 2,
+	// 0x5a
+	{
+		asm:    "BIT 3,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(3, &s.DE.Hi)
 		},
-
-		// 0x5B
-		{
-			asm:    "BIT 3,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x5b
+	{
+		asm:    "BIT 3,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(3, &s.DE.Lo)
 		},
+	},
 
-		// 0x5C
-		{
-			asm:    "BIT 3,H",
-			length: 2,
-			cycles: 2,
+	// 0x5c
+	{
+		asm:    "BIT 3,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(3, &s.HL.Hi)
 		},
-
-		// 0x5D
-		{
-			asm:    "BIT 3,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x5d
+	{
+		asm:    "BIT 3,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(3, &s.HL.Lo)
 		},
+	},
 
-		// 0x5E
-		{
-			asm:    "BIT 3,(HL)",
-			length: 2,
-			cycles: 3,
+	// 0x5e
+	{
+		asm:    "BIT 3,(HL)",
+		length: 0,
+		cycles: 3,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.bit(3, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x5F
-		{
-			asm:    "BIT 3,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x5f
+	{
+		asm:    "BIT 3,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(3, &s.AF.Hi)
 		},
+	},
 
-		// 0x60
-		{
-			asm:    "BIT 4,B",
-			length: 2,
-			cycles: 2,
+	// 0x60
+	{
+		asm:    "BIT 4,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(4, &s.BC.Hi)
 		},
-
-		// 0x61
-		{
-			asm:    "BIT 4,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x61
+	{
+		asm:    "BIT 4,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(4, &s.BC.Lo)
 		},
+	},
 
-		// 0x62
-		{
-			asm:    "BIT 4,D",
-			length: 2,
-			cycles: 2,
+	// 0x62
+	{
+		asm:    "BIT 4,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(4, &s.DE.Hi)
 		},
-
-		// 0x63
-		{
-			asm:    "BIT 4,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x63
+	{
+		asm:    "BIT 4,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(4, &s.DE.Lo)
 		},
+	},
 
-		// 0x64
-		{
-			asm:    "BIT 4,H",
-			length: 2,
-			cycles: 2,
+	// 0x64
+	{
+		asm:    "BIT 4,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(4, &s.HL.Hi)
 		},
-
-		// 0x65
-		{
-			asm:    "BIT 4,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x65
+	{
+		asm:    "BIT 4,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(4, &s.HL.Lo)
 		},
+	},
 
-		// 0x66
-		{
-			asm:    "BIT 4,(HL)",
-			length: 2,
-			cycles: 3,
+	// 0x66
+	{
+		asm:    "BIT 4,(HL)",
+		length: 0,
+		cycles: 3,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.bit(4, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x67
-		{
-			asm:    "BIT 4,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x67
+	{
+		asm:    "BIT 4,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(4, &s.AF.Hi)
 		},
+	},
 
-		// 0x68
-		{
-			asm:    "BIT 5,B",
-			length: 2,
-			cycles: 2,
+	// 0x68
+	{
+		asm:    "BIT 5,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(5, &s.BC.Hi)
 		},
-
-		// 0x69
-		{
-			asm:    "BIT 5,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x69
+	{
+		asm:    "BIT 5,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(5, &s.BC.Lo)
 		},
+	},
 
-		// 0x6A
-		{
-			asm:    "BIT 5,D",
-			length: 2,
-			cycles: 2,
+	// 0x6a
+	{
+		asm:    "BIT 5,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(5, &s.DE.Hi)
 		},
-
-		// 0x6B
-		{
-			asm:    "BIT 5,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x6b
+	{
+		asm:    "BIT 5,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(5, &s.DE.Lo)
 		},
+	},
 
-		// 0x6C
-		{
-			asm:    "BIT 5,H",
-			length: 2,
-			cycles: 2,
+	// 0x6c
+	{
+		asm:    "BIT 5,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(5, &s.HL.Hi)
 		},
-
-		// 0x6D
-		{
-			asm:    "BIT 5,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x6d
+	{
+		asm:    "BIT 5,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(5, &s.HL.Lo)
 		},
+	},
 
-		// 0x6E
-		{
-			asm:    "BIT 5,(HL)",
-			length: 2,
-			cycles: 3,
+	// 0x6e
+	{
+		asm:    "BIT 5,(HL)",
+		length: 0,
+		cycles: 3,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.bit(5, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x6F
-		{
-			asm:    "BIT 5,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x6f
+	{
+		asm:    "BIT 5,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(5, &s.AF.Hi)
 		},
+	},
 
-		// 0x70
-		{
-			asm:    "BIT 6,B",
-			length: 2,
-			cycles: 2,
+	// 0x70
+	{
+		asm:    "BIT 6,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(6, &s.BC.Hi)
 		},
-
-		// 0x71
-		{
-			asm:    "BIT 6,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x71
+	{
+		asm:    "BIT 6,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(6, &s.BC.Lo)
 		},
+	},
 
-		// 0x72
-		{
-			asm:    "BIT 6,D",
-			length: 2,
-			cycles: 2,
+	// 0x72
+	{
+		asm:    "BIT 6,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(6, &s.DE.Hi)
 		},
-
-		// 0x73
-		{
-			asm:    "BIT 6,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x73
+	{
+		asm:    "BIT 6,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(6, &s.DE.Lo)
 		},
+	},
 
-		// 0x74
-		{
-			asm:    "BIT 6,H",
-			length: 2,
-			cycles: 2,
+	// 0x74
+	{
+		asm:    "BIT 6,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(6, &s.HL.Hi)
 		},
-
-		// 0x75
-		{
-			asm:    "BIT 6,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x75
+	{
+		asm:    "BIT 6,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(6, &s.HL.Lo)
 		},
+	},
 
-		// 0x76
-		{
-			asm:    "BIT 6,(HL)",
-			length: 2,
-			cycles: 3,
+	// 0x76
+	{
+		asm:    "BIT 6,(HL)",
+		length: 0,
+		cycles: 3,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.bit(6, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x77
-		{
-			asm:    "BIT 6,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x77
+	{
+		asm:    "BIT 6,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(6, &s.AF.Hi)
 		},
+	},
 
-		// 0x78
-		{
-			asm:    "BIT 7,B",
-			length: 2,
-			cycles: 2,
+	// 0x78
+	{
+		asm:    "BIT 7,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(7, &s.BC.Hi)
 		},
-
-		// 0x79
-		{
-			asm:    "BIT 7,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x79
+	{
+		asm:    "BIT 7,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(7, &s.BC.Lo)
 		},
+	},
 
-		// 0x7A
-		{
-			asm:    "BIT 7,D",
-			length: 2,
-			cycles: 2,
+	// 0x7a
+	{
+		asm:    "BIT 7,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(7, &s.DE.Hi)
 		},
-
-		// 0x7B
-		{
-			asm:    "BIT 7,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x7b
+	{
+		asm:    "BIT 7,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(7, &s.DE.Lo)
 		},
+	},
 
-		// 0x7C
-		{
-			asm:    "BIT 7,H",
-			length: 2,
-			cycles: 2,
+	// 0x7c
+	{
+		asm:    "BIT 7,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(7, &s.HL.Hi)
 		},
-
-		// 0x7D
-		{
-			asm:    "BIT 7,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x7d
+	{
+		asm:    "BIT 7,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(7, &s.HL.Lo)
 		},
+	},
 
-		// 0x7E
-		{
-			asm:    "BIT 7,(HL)",
-			length: 2,
-			cycles: 3,
+	// 0x7e
+	{
+		asm:    "BIT 7,(HL)",
+		length: 0,
+		cycles: 3,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.bit(7, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x7F
-		{
-			asm:    "BIT 7,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x7f
+	{
+		asm:    "BIT 7,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.bit(7, &s.AF.Hi)
 		},
+	},
 
-		// 0x80
-		{
-			asm:    "RES 0,B",
-			length: 2,
-			cycles: 2,
+	// 0x80
+	{
+		asm:    "RES 0,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(0, &s.BC.Hi)
 		},
-
-		// 0x81
-		{
-			asm:    "RES 0,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x81
+	{
+		asm:    "RES 0,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(0, &s.BC.Lo)
 		},
+	},
 
-		// 0x82
-		{
-			asm:    "RES 0,D",
-			length: 2,
-			cycles: 2,
+	// 0x82
+	{
+		asm:    "RES 0,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(0, &s.DE.Hi)
 		},
-
-		// 0x83
-		{
-			asm:    "RES 0,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x83
+	{
+		asm:    "RES 0,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(0, &s.DE.Lo)
 		},
+	},
 
-		// 0x84
-		{
-			asm:    "RES 0,H",
-			length: 2,
-			cycles: 2,
+	// 0x84
+	{
+		asm:    "RES 0,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(0, &s.HL.Hi)
 		},
-
-		// 0x85
-		{
-			asm:    "RES 0,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x85
+	{
+		asm:    "RES 0,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(0, &s.HL.Lo)
 		},
+	},
 
-		// 0x86
-		{
-			asm:    "RES 0,(HL)",
-			length: 2,
-			cycles: 4,
+	// 0x86
+	{
+		asm:    "RES 0,(HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.res(0, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x87
-		{
-			asm:    "RES 0,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x87
+	{
+		asm:    "RES 0,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(0, &s.AF.Hi)
 		},
+	},
 
-		// 0x88
-		{
-			asm:    "RES 1,B",
-			length: 2,
-			cycles: 2,
+	// 0x88
+	{
+		asm:    "RES 1,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(1, &s.BC.Hi)
 		},
-
-		// 0x89
-		{
-			asm:    "RES 1,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x89
+	{
+		asm:    "RES 1,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(1, &s.BC.Lo)
 		},
+	},
 
-		// 0x8A
-		{
-			asm:    "RES 1,D",
-			length: 2,
-			cycles: 2,
+	// 0x8a
+	{
+		asm:    "RES 1,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(1, &s.DE.Hi)
 		},
-
-		// 0x8B
-		{
-			asm:    "RES 1,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x8b
+	{
+		asm:    "RES 1,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(1, &s.DE.Lo)
 		},
+	},
 
-		// 0x8C
-		{
-			asm:    "RES 1,H",
-			length: 2,
-			cycles: 2,
+	// 0x8c
+	{
+		asm:    "RES 1,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(1, &s.HL.Hi)
 		},
-
-		// 0x8D
-		{
-			asm:    "RES 1,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x8d
+	{
+		asm:    "RES 1,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(1, &s.HL.Lo)
 		},
+	},
 
-		// 0x8E
-		{
-			asm:    "RES 1,(HL)",
-			length: 2,
-			cycles: 4,
+	// 0x8e
+	{
+		asm:    "RES 1,(HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.res(1, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x8F
-		{
-			asm:    "RES 1,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x8f
+	{
+		asm:    "RES 1,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(1, &s.AF.Hi)
 		},
+	},
 
-		// 0x90
-		{
-			asm:    "RES 2,B",
-			length: 2,
-			cycles: 2,
+	// 0x90
+	{
+		asm:    "RES 2,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(2, &s.BC.Hi)
 		},
-
-		// 0x91
-		{
-			asm:    "RES 2,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x91
+	{
+		asm:    "RES 2,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(2, &s.BC.Lo)
 		},
+	},
 
-		// 0x92
-		{
-			asm:    "RES 2,D",
-			length: 2,
-			cycles: 2,
+	// 0x92
+	{
+		asm:    "RES 2,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(2, &s.DE.Hi)
 		},
-
-		// 0x93
-		{
-			asm:    "RES 2,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x93
+	{
+		asm:    "RES 2,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(2, &s.DE.Lo)
 		},
+	},
 
-		// 0x94
-		{
-			asm:    "RES 2,H",
-			length: 2,
-			cycles: 2,
+	// 0x94
+	{
+		asm:    "RES 2,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(2, &s.HL.Hi)
 		},
-
-		// 0x95
-		{
-			asm:    "RES 2,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x95
+	{
+		asm:    "RES 2,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(2, &s.HL.Lo)
 		},
+	},
 
-		// 0x96
-		{
-			asm:    "RES 2,(HL)",
-			length: 2,
-			cycles: 4,
+	// 0x96
+	{
+		asm:    "RES 2,(HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.res(2, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x97
-		{
-			asm:    "RES 2,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x97
+	{
+		asm:    "RES 2,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(2, &s.AF.Hi)
 		},
+	},
 
-		// 0x98
-		{
-			asm:    "RES 3,B",
-			length: 2,
-			cycles: 2,
+	// 0x98
+	{
+		asm:    "RES 3,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(3, &s.BC.Hi)
 		},
-
-		// 0x99
-		{
-			asm:    "RES 3,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x99
+	{
+		asm:    "RES 3,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(3, &s.BC.Lo)
 		},
+	},
 
-		// 0x9A
-		{
-			asm:    "RES 3,D",
-			length: 2,
-			cycles: 2,
+	// 0x9a
+	{
+		asm:    "RES 3,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(3, &s.DE.Hi)
 		},
-
-		// 0x9B
-		{
-			asm:    "RES 3,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x9b
+	{
+		asm:    "RES 3,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(3, &s.DE.Lo)
 		},
+	},
 
-		// 0x9C
-		{
-			asm:    "RES 3,H",
-			length: 2,
-			cycles: 2,
+	// 0x9c
+	{
+		asm:    "RES 3,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(3, &s.HL.Hi)
 		},
-
-		// 0x9D
-		{
-			asm:    "RES 3,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x9d
+	{
+		asm:    "RES 3,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(3, &s.HL.Lo)
 		},
+	},
 
-		// 0x9E
-		{
-			asm:    "RES 3,(HL)",
-			length: 2,
-			cycles: 4,
+	// 0x9e
+	{
+		asm:    "RES 3,(HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.res(3, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0x9F
-		{
-			asm:    "RES 3,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0x9f
+	{
+		asm:    "RES 3,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(3, &s.AF.Hi)
 		},
+	},
 
-		// 0xA0
-		{
-			asm:    "RES 4,B",
-			length: 2,
-			cycles: 2,
+	// 0xa0
+	{
+		asm:    "RES 4,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(4, &s.BC.Hi)
 		},
-
-		// 0xA1
-		{
-			asm:    "RES 4,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xa1
+	{
+		asm:    "RES 4,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(4, &s.BC.Lo)
 		},
+	},
 
-		// 0xA2
-		{
-			asm:    "RES 4,D",
-			length: 2,
-			cycles: 2,
+	// 0xa2
+	{
+		asm:    "RES 4,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(4, &s.DE.Hi)
 		},
-
-		// 0xA3
-		{
-			asm:    "RES 4,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xa3
+	{
+		asm:    "RES 4,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(4, &s.DE.Lo)
 		},
+	},
 
-		// 0xA4
-		{
-			asm:    "RES 4,H",
-			length: 2,
-			cycles: 2,
+	// 0xa4
+	{
+		asm:    "RES 4,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(4, &s.HL.Hi)
 		},
-
-		// 0xA5
-		{
-			asm:    "RES 4,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xa5
+	{
+		asm:    "RES 4,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(4, &s.HL.Lo)
 		},
+	},
 
-		// 0xA6
-		{
-			asm:    "RES 4,(HL)",
-			length: 2,
-			cycles: 4,
+	// 0xa6
+	{
+		asm:    "RES 4,(HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.res(4, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0xA7
-		{
-			asm:    "RES 4,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xa7
+	{
+		asm:    "RES 4,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(4, &s.AF.Hi)
 		},
+	},
 
-		// 0xA8
-		{
-			asm:    "RES 5,B",
-			length: 2,
-			cycles: 2,
+	// 0xa8
+	{
+		asm:    "RES 5,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(5, &s.BC.Hi)
 		},
-
-		// 0xA9
-		{
-			asm:    "RES 5,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xa9
+	{
+		asm:    "RES 5,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(5, &s.BC.Lo)
 		},
+	},
 
-		// 0xAA
-		{
-			asm:    "RES 5,D",
-			length: 2,
-			cycles: 2,
+	// 0xaa
+	{
+		asm:    "RES 5,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(5, &s.DE.Hi)
 		},
-
-		// 0xAB
-		{
-			asm:    "RES 5,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xab
+	{
+		asm:    "RES 5,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(5, &s.DE.Lo)
 		},
+	},
 
-		// 0xAC
-		{
-			asm:    "RES 5,H",
-			length: 2,
-			cycles: 2,
+	// 0xac
+	{
+		asm:    "RES 5,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(5, &s.HL.Hi)
 		},
-
-		// 0xAD
-		{
-			asm:    "RES 5,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xad
+	{
+		asm:    "RES 5,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(5, &s.HL.Lo)
 		},
+	},
 
-		// 0xAE
-		{
-			asm:    "RES 5,(HL)",
-			length: 2,
-			cycles: 4,
+	// 0xae
+	{
+		asm:    "RES 5,(HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.res(5, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0xAF
-		{
-			asm:    "RES 5,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xaf
+	{
+		asm:    "RES 5,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(5, &s.AF.Hi)
 		},
+	},
 
-		// 0xB0
-		{
-			asm:    "RES 6,B",
-			length: 2,
-			cycles: 2,
+	// 0xb0
+	{
+		asm:    "RES 6,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(6, &s.BC.Hi)
 		},
-
-		// 0xB1
-		{
-			asm:    "RES 6,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xb1
+	{
+		asm:    "RES 6,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(6, &s.BC.Lo)
 		},
+	},
 
-		// 0xB2
-		{
-			asm:    "RES 6,D",
-			length: 2,
-			cycles: 2,
+	// 0xb2
+	{
+		asm:    "RES 6,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(6, &s.DE.Hi)
 		},
-
-		// 0xB3
-		{
-			asm:    "RES 6,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xb3
+	{
+		asm:    "RES 6,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(6, &s.DE.Lo)
 		},
+	},
 
-		// 0xB4
-		{
-			asm:    "RES 6,H",
-			length: 2,
-			cycles: 2,
+	// 0xb4
+	{
+		asm:    "RES 6,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(6, &s.HL.Hi)
 		},
-
-		// 0xB5
-		{
-			asm:    "RES 6,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xb5
+	{
+		asm:    "RES 6,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(6, &s.HL.Lo)
 		},
+	},
 
-		// 0xB6
-		{
-			asm:    "RES 6,(HL)",
-			length: 2,
-			cycles: 4,
+	// 0xb6
+	{
+		asm:    "RES 6,(HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.res(6, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0xB7
-		{
-			asm:    "RES 6,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xb7
+	{
+		asm:    "RES 6,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(6, &s.AF.Hi)
 		},
+	},
 
-		// 0xB8
-		{
-			asm:    "RES 7,B",
-			length: 2,
-			cycles: 2,
+	// 0xb8
+	{
+		asm:    "RES 7,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(7, &s.BC.Hi)
 		},
-
-		// 0xB9
-		{
-			asm:    "RES 7,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xb9
+	{
+		asm:    "RES 7,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(7, &s.BC.Lo)
 		},
+	},
 
-		// 0xBA
-		{
-			asm:    "RES 7,D",
-			length: 2,
-			cycles: 2,
+	// 0xba
+	{
+		asm:    "RES 7,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(7, &s.DE.Hi)
 		},
-
-		// 0xBB
-		{
-			asm:    "RES 7,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xbb
+	{
+		asm:    "RES 7,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(7, &s.DE.Lo)
 		},
+	},
 
-		// 0xBC
-		{
-			asm:    "RES 7,H",
-			length: 2,
-			cycles: 2,
+	// 0xbc
+	{
+		asm:    "RES 7,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(7, &s.HL.Hi)
 		},
-
-		// 0xBD
-		{
-			asm:    "RES 7,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xbd
+	{
+		asm:    "RES 7,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(7, &s.HL.Lo)
 		},
+	},
 
-		// 0xBE
-		{
-			asm:    "RES 7,(HL)",
-			length: 2,
-			cycles: 4,
+	// 0xbe
+	{
+		asm:    "RES 7,(HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.res(7, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0xBF
-		{
-			asm:    "RES 7,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xbf
+	{
+		asm:    "RES 7,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.res(7, &s.AF.Hi)
 		},
+	},
 
-		// 0xC0
-		{
-			asm:    "SET 0,B",
-			length: 2,
-			cycles: 2,
+	// 0xc0
+	{
+		asm:    "SET 0,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(0, &s.BC.Hi)
 		},
-
-		// 0xC1
-		{
-			asm:    "SET 0,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xc1
+	{
+		asm:    "SET 0,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(0, &s.BC.Lo)
 		},
+	},
 
-		// 0xC2
-		{
-			asm:    "SET 0,D",
-			length: 2,
-			cycles: 2,
+	// 0xc2
+	{
+		asm:    "SET 0,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(0, &s.DE.Hi)
 		},
-
-		// 0xC3
-		{
-			asm:    "SET 0,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xc3
+	{
+		asm:    "SET 0,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(0, &s.DE.Lo)
 		},
+	},
 
-		// 0xC4
-		{
-			asm:    "SET 0,H",
-			length: 2,
-			cycles: 2,
+	// 0xc4
+	{
+		asm:    "SET 0,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(0, &s.HL.Hi)
 		},
-
-		// 0xC5
-		{
-			asm:    "SET 0,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xc5
+	{
+		asm:    "SET 0,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(0, &s.HL.Lo)
 		},
+	},
 
-		// 0xC6
-		{
-			asm:    "SET 0,(HL)",
-			length: 2,
-			cycles: 4,
+	// 0xc6
+	{
+		asm:    "SET 0,(HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.set(0, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0xC7
-		{
-			asm:    "SET 0,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xc7
+	{
+		asm:    "SET 0,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(0, &s.AF.Hi)
 		},
+	},
 
-		// 0xC8
-		{
-			asm:    "SET 1,B",
-			length: 2,
-			cycles: 2,
+	// 0xc8
+	{
+		asm:    "SET 1,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(1, &s.BC.Hi)
 		},
-
-		// 0xC9
-		{
-			asm:    "SET 1,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xc9
+	{
+		asm:    "SET 1,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(1, &s.BC.Lo)
 		},
+	},
 
-		// 0xCA
-		{
-			asm:    "SET 1,D",
-			length: 2,
-			cycles: 2,
+	// 0xca
+	{
+		asm:    "SET 1,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(1, &s.DE.Hi)
 		},
-
-		// 0xCB
-		{
-			asm:    "SET 1,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xcb
+	{
+		asm:    "SET 1,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(1, &s.DE.Lo)
 		},
+	},
 
-		// 0xCC
-		{
-			asm:    "SET 1,H",
-			length: 2,
-			cycles: 2,
+	// 0xcc
+	{
+		asm:    "SET 1,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(1, &s.HL.Hi)
 		},
-
-		// 0xCD
-		{
-			asm:    "SET 1,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xcd
+	{
+		asm:    "SET 1,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(1, &s.HL.Lo)
 		},
+	},
 
-		// 0xCE
-		{
-			asm:    "SET 1,(HL)",
-			length: 2,
-			cycles: 4,
+	// 0xce
+	{
+		asm:    "SET 1,(HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.set(1, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0xCF
-		{
-			asm:    "SET 1,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xcf
+	{
+		asm:    "SET 1,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(1, &s.AF.Hi)
 		},
+	},
 
-		// 0xD0
-		{
-			asm:    "SET 2,B",
-			length: 2,
-			cycles: 2,
+	// 0xd0
+	{
+		asm:    "SET 2,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(2, &s.BC.Hi)
 		},
-
-		// 0xD1
-		{
-			asm:    "SET 2,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xd1
+	{
+		asm:    "SET 2,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(2, &s.BC.Lo)
 		},
+	},
 
-		// 0xD2
-		{
-			asm:    "SET 2,D",
-			length: 2,
-			cycles: 2,
+	// 0xd2
+	{
+		asm:    "SET 2,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(2, &s.DE.Hi)
 		},
-
-		// 0xD3
-		{
-			asm:    "SET 2,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xd3
+	{
+		asm:    "SET 2,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(2, &s.DE.Lo)
 		},
+	},
 
-		// 0xD4
-		{
-			asm:    "SET 2,H",
-			length: 2,
-			cycles: 2,
+	// 0xd4
+	{
+		asm:    "SET 2,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(2, &s.HL.Hi)
 		},
-
-		// 0xD5
-		{
-			asm:    "SET 2,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xd5
+	{
+		asm:    "SET 2,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(2, &s.HL.Lo)
 		},
+	},
 
-		// 0xD6
-		{
-			asm:    "SET 2,(HL)",
-			length: 2,
-			cycles: 4,
+	// 0xd6
+	{
+		asm:    "SET 2,(HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.set(2, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0xD7
-		{
-			asm:    "SET 2,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xd7
+	{
+		asm:    "SET 2,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(2, &s.AF.Hi)
 		},
+	},
 
-		// 0xD8
-		{
-			asm:    "SET 3,B",
-			length: 2,
-			cycles: 2,
+	// 0xd8
+	{
+		asm:    "SET 3,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(3, &s.BC.Hi)
 		},
-
-		// 0xD9
-		{
-			asm:    "SET 3,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xd9
+	{
+		asm:    "SET 3,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(3, &s.BC.Lo)
 		},
+	},
 
-		// 0xDA
-		{
-			asm:    "SET 3,D",
-			length: 2,
-			cycles: 2,
+	// 0xda
+	{
+		asm:    "SET 3,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(3, &s.DE.Hi)
 		},
-
-		// 0xDB
-		{
-			asm:    "SET 3,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xdb
+	{
+		asm:    "SET 3,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(3, &s.DE.Lo)
 		},
+	},
 
-		// 0xDC
-		{
-			asm:    "SET 3,H",
-			length: 2,
-			cycles: 2,
+	// 0xdc
+	{
+		asm:    "SET 3,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(3, &s.HL.Hi)
 		},
-
-		// 0xDD
-		{
-			asm:    "SET 3,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xdd
+	{
+		asm:    "SET 3,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(3, &s.HL.Lo)
 		},
+	},
 
-		// 0xDE
-		{
-			asm:    "SET 3,(HL)",
-			length: 2,
-			cycles: 4,
+	// 0xde
+	{
+		asm:    "SET 3,(HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.set(3, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0xDF
-		{
-			asm:    "SET 3,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xdf
+	{
+		asm:    "SET 3,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(3, &s.AF.Hi)
 		},
+	},
 
-		// 0xE0
-		{
-			asm:    "SET 4,B",
-			length: 2,
-			cycles: 2,
+	// 0xe0
+	{
+		asm:    "SET 4,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(4, &s.BC.Hi)
 		},
-
-		// 0xE1
-		{
-			asm:    "SET 4,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xe1
+	{
+		asm:    "SET 4,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(4, &s.BC.Lo)
 		},
+	},
 
-		// 0xE2
-		{
-			asm:    "SET 4,D",
-			length: 2,
-			cycles: 2,
+	// 0xe2
+	{
+		asm:    "SET 4,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(4, &s.DE.Hi)
 		},
-
-		// 0xE3
-		{
-			asm:    "SET 4,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xe3
+	{
+		asm:    "SET 4,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(4, &s.DE.Lo)
 		},
+	},
 
-		// 0xE4
-		{
-			asm:    "SET 4,H",
-			length: 2,
-			cycles: 2,
+	// 0xe4
+	{
+		asm:    "SET 4,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(4, &s.HL.Hi)
 		},
-
-		// 0xE5
-		{
-			asm:    "SET 4,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xe5
+	{
+		asm:    "SET 4,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(4, &s.HL.Lo)
 		},
+	},
 
-		// 0xE6
-		{
-			asm:    "SET 4,(HL)",
-			length: 2,
-			cycles: 4,
+	// 0xe6
+	{
+		asm:    "SET 4,(HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.set(4, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0xE7
-		{
-			asm:    "SET 4,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xe7
+	{
+		asm:    "SET 4,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(4, &s.AF.Hi)
 		},
+	},
 
-		// 0xE8
-		{
-			asm:    "SET 5,B",
-			length: 2,
-			cycles: 2,
+	// 0xe8
+	{
+		asm:    "SET 5,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(5, &s.BC.Hi)
 		},
-
-		// 0xE9
-		{
-			asm:    "SET 5,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xe9
+	{
+		asm:    "SET 5,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(5, &s.BC.Lo)
 		},
+	},
 
-		// 0xEA
-		{
-			asm:    "SET 5,D",
-			length: 2,
-			cycles: 2,
+	// 0xea
+	{
+		asm:    "SET 5,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(5, &s.DE.Hi)
 		},
-
-		// 0xEB
-		{
-			asm:    "SET 5,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xeb
+	{
+		asm:    "SET 5,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(5, &s.DE.Lo)
 		},
+	},
 
-		// 0xEC
-		{
-			asm:    "SET 5,H",
-			length: 2,
-			cycles: 2,
+	// 0xec
+	{
+		asm:    "SET 5,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(5, &s.HL.Hi)
 		},
-
-		// 0xED
-		{
-			asm:    "SET 5,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xed
+	{
+		asm:    "SET 5,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(5, &s.HL.Lo)
 		},
+	},
 
-		// 0xEE
-		{
-			asm:    "SET 5,(HL)",
-			length: 2,
-			cycles: 4,
+	// 0xee
+	{
+		asm:    "SET 5,(HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.set(5, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0xEF
-		{
-			asm:    "SET 5,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xef
+	{
+		asm:    "SET 5,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(5, &s.AF.Hi)
 		},
+	},
 
-		// 0xF0
-		{
-			asm:    "SET 6,B",
-			length: 2,
-			cycles: 2,
+	// 0xf0
+	{
+		asm:    "SET 6,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(6, &s.BC.Hi)
 		},
-
-		// 0xF1
-		{
-			asm:    "SET 6,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xf1
+	{
+		asm:    "SET 6,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(6, &s.BC.Lo)
 		},
+	},
 
-		// 0xF2
-		{
-			asm:    "SET 6,D",
-			length: 2,
-			cycles: 2,
+	// 0xf2
+	{
+		asm:    "SET 6,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(6, &s.DE.Hi)
 		},
-
-		// 0xF3
-		{
-			asm:    "SET 6,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xf3
+	{
+		asm:    "SET 6,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(6, &s.DE.Lo)
 		},
+	},
 
-		// 0xF4
-		{
-			asm:    "SET 6,H",
-			length: 2,
-			cycles: 2,
+	// 0xf4
+	{
+		asm:    "SET 6,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(6, &s.HL.Hi)
 		},
-
-		// 0xF5
-		{
-			asm:    "SET 6,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xf5
+	{
+		asm:    "SET 6,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(6, &s.HL.Lo)
 		},
+	},
 
-		// 0xF6
-		{
-			asm:    "SET 6,(HL)",
-			length: 2,
-			cycles: 4,
+	// 0xf6
+	{
+		asm:    "SET 6,(HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.set(6, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0xF7
-		{
-			asm:    "SET 6,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xf7
+	{
+		asm:    "SET 6,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(6, &s.AF.Hi)
 		},
+	},
 
-		// 0xF8
-		{
-			asm:    "SET 7,B",
-			length: 2,
-			cycles: 2,
+	// 0xf8
+	{
+		asm:    "SET 7,B",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(7, &s.BC.Hi)
 		},
-
-		// 0xF9
-		{
-			asm:    "SET 7,C",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xf9
+	{
+		asm:    "SET 7,C",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(7, &s.BC.Lo)
 		},
+	},
 
-		// 0xFA
-		{
-			asm:    "SET 7,D",
-			length: 2,
-			cycles: 2,
+	// 0xfa
+	{
+		asm:    "SET 7,D",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(7, &s.DE.Hi)
 		},
-
-		// 0xFB
-		{
-			asm:    "SET 7,E",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xfb
+	{
+		asm:    "SET 7,E",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(7, &s.DE.Lo)
 		},
+	},
 
-		// 0xFC
-		{
-			asm:    "SET 7,H",
-			length: 2,
-			cycles: 2,
+	// 0xfc
+	{
+		asm:    "SET 7,H",
+		length: 0,
+		cycles: 2,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(7, &s.HL.Hi)
 		},
-
-		// 0xFD
-		{
-			asm:    "SET 7,L",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xfd
+	{
+		asm:    "SET 7,L",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(7, &s.HL.Lo)
 		},
+	},
 
-		// 0xFE
-		{
-			asm:    "SET 7,(HL)",
-			length: 2,
-			cycles: 4,
+	// 0xfe
+	{
+		asm:    "SET 7,(HL)",
+		length: 0,
+		cycles: 4,
 
-			fn: func(s *State, v Value) {
-
-			},
+		fn: func(s *State, v Value) {
+			b := s.ReadFrom(s.HL)
+			s.fl.set(7, &b)
+			s.WriteTo(s.HL, b)
 		},
-
-		// 0xFF
-		{
-			asm:    "SET 7,A",
-			length: 2,
-			cycles: 2,
+	},
 
-			fn: func(s *State, v Value) {
+	// 0xff
+	{
+		asm:    "SET 7,A",
+		length: 0,
+		cycles: 2,
 
-			},
+		fn: func(s *State, v Value) {
+			s.fl.set(7, &s.AF.Hi)
 		},
 	},
 }
