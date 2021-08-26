@@ -21,7 +21,7 @@ var (
 // If it is nil, the instruction is unused.
 type Instruction struct {
 	asm    string
-	length uint8
-	cycles uint8
+	length int
+	cycles int
 	fn     func(s *State, v Value)
 }

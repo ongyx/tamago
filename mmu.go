@@ -17,10 +17,51 @@ func NewMMU() *MMU {
 	return &MMU{}
 }
 
+func (m *MMU) pointer(addr uint16) *uint8 {
+	var v *uint8
+	*v = 0
+
+	switch {
+
+	case addr <= 0x7fff:
+		v = &m.rom[addr]
+
+	case addr <= 0x9fff:
+		v = &m.vram[addr-0x8000]
+
+	case addr <= 0xbfff:
+		v = &m.eram[addr-0xa000]
+
+	case addr <= 0xdfff:
+		v = &m.wram[addr-0xc000]
+
+	case addr <= 0xfdff:
+		v = &m.wram[addr-0xe000]
+
+	case addr <= 0xfeff:
+		v = &m.oam[addr-0xfe00]
+
+	case addr <= 0xff7f:
+		// TODO
+		v = &m.io[addr-0xff00]
+
+	case addr <= 0xfffe:
+		v = &m.hram[addr-0xff80]
+
+	case addr == 0xffff:
+		// TODO
+
+	}
+
+	return v
+}
+
 func (m *MMU) read(addr uint16) uint8 {
-	return m.bus[addr]
+	ptr := m.pointer(addr)
+	return *ptr
 }
 
 func (m *MMU) write(addr uint16, val uint8) {
-	m.bus[addr] = val
+	ptr := m.pointer(addr)
+	*ptr = val
 }
