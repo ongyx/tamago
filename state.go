@@ -1,16 +1,22 @@
 package tamago
 
+import (
+	"math/rand"
+)
+
 // State represents the current state of the emulation at some point in time.
 type State struct {
 	AF, BC, DE, HL *Register
 	SP, PC         uint16
 
-	fl      *Flags
-	intr    *Interrupt
-	clock   *Clock
-	mmu     *MMU
-	gpu     *GPU
+	mem     [0xFFFF]uint8
 	stopped bool
+
+	fl    *Flags
+	intr  *Interrupt
+	clock *Clock
+	gpu   *GPU
+	input *Input
 }
 
 func NewState() *State {
@@ -28,8 +34,8 @@ func NewState() *State {
 	s.fl = NewFlags(s.AF)
 	s.intr = NewInterrupt()
 	s.clock = NewClock()
-	s.mmu = NewMMU()
 	s.gpu = NewGPU()
+	s.input = NewInput()
 
 	return s
 }
@@ -59,7 +65,39 @@ func (s *State) JumpIf(cond bool, v Value) {
 
 // Read the byte at addr.
 func (s *State) Read(addr uint16) uint8 {
-	return s.mmu.read(addr)
+
+	switch addr {
+
+	// I/O
+	case 0xff00:
+		return s.input.Poll()
+
+	case 0xff04:
+		buf := make([]uint8, 1)
+		rand.Read(buf)
+		return buf[0]
+
+	case 0xff40:
+		return s.gpu.control
+
+	case 0xff42:
+		return s.gpu.scrollY
+
+	case 0xff43:
+		return s.gpu.scrollX
+
+	case 0xff44:
+		return s.gpu.scanline
+
+	case 0xff0f:
+		return uint8(s.intr.flags)
+
+	case 0xffff:
+		return tobit(s.intr.enable)
+
+	}
+
+	return s.mem[addr]
 }
 
 // Read the byte at addr, where addr is the register's value.
@@ -74,7 +112,7 @@ func (s *State) ReadShort(addr uint16) uint16 {
 
 // Write a byte to addr.
 func (s *State) Write(addr uint16, val uint8) {
-	s.mmu.write(addr, val)
+	s.mem[addr] = val
 }
 
 // Write a byte to addr, where addr is the register's value.
