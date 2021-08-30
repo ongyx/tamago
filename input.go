@@ -11,9 +11,6 @@ const (
 	BtnLeft
 	BtnUp
 	BtnDown
-
-	MAction    = true
-	MDirection = false
 )
 
 type Input struct {
@@ -28,7 +25,7 @@ func NewInput() *Input {
 	return &Input{action: true, buttons: button(0xFF)}
 }
 
-func (i *Input) Mode(m bool) {
+func (i *Input) Action(m bool) {
 	i.action = m
 }
 

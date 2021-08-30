@@ -21,7 +21,7 @@ func (c *CPU) fetch() uint8 {
 	return b
 }
 
-func (c *CPU) Step() {
+func (c *CPU) step() {
 	if c.state.stopped {
 		return
 	}

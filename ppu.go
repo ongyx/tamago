@@ -1,9 +1,9 @@
 package tamago
 
-type GPU struct {
+type PPU struct {
 	control, scrollX, scrollY, scanline, tick uint8
 }
 
-func NewGPU() *GPU {
-	return &GPU{}
+func NewPPU() *PPU {
+	return &PPU{}
 }

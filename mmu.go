@@ -1,8 +1,9 @@
 package tamago
 
+import "math/rand"
+
 // MMU handles reading from and writing to the emulated address bus.
 // The contents of the ROM and RAM are stored here.
-// However, this should not be used directly: use State.Read and State.Write instead.
 type MMU struct {
 	rom  [0x8000]uint8
 	vram [0x2000]uint8
@@ -11,57 +12,159 @@ type MMU struct {
 	oam  [0x100]uint8
 	io   [0x100]uint8
 	hram [0x80]uint8
+
+	input *Input
+	intr  *Interrupt
+	ppu   *PPU
 }
 
 func NewMMU() *MMU {
-	return &MMU{}
+	return &MMU{
+		input: NewInput(),
+		intr:  NewInterrupt(),
+		ppu:   NewPPU(),
+	}
 }
 
-func (m *MMU) pointer(addr uint16) *uint8 {
-	var v *uint8
-	*v = 0
+// Read the byte at addr.
+func (m *MMU) Read(addr uint16) uint8 {
 
 	switch {
 
 	case addr <= 0x7fff:
-		v = &m.rom[addr]
+		return m.rom[addr]
 
 	case addr <= 0x9fff:
-		v = &m.vram[addr-0x8000]
+		return m.vram[addr-0x8000]
 
 	case addr <= 0xbfff:
-		v = &m.eram[addr-0xa000]
+		return m.eram[addr-0xa000]
 
 	case addr <= 0xdfff:
-		v = &m.wram[addr-0xc000]
+		return m.wram[addr-0xc000]
 
 	case addr <= 0xfdff:
-		v = &m.wram[addr-0xe000]
+		return m.wram[addr-0xe000]
 
 	case addr <= 0xfeff:
-		v = &m.oam[addr-0xfe00]
+		return m.oam[addr-0xfe00]
+
+	// I/O
+	case addr == 0xff00:
+		return m.input.Poll()
+
+	case addr == 0xff04:
+		buf := make([]uint8, 1)
+		rand.Read(buf)
+		return buf[0]
+
+	case addr == 0xff0f:
+		return uint8(m.intr.flags)
+
+	case addr == 0xff40:
+		return m.ppu.control
+
+	case addr == 0xff42:
+		return m.ppu.scrollY
+
+	case addr == 0xff43:
+		return m.ppu.scrollX
+
+	case addr == 0xff44:
+		return m.ppu.scanline
 
 	case addr <= 0xff7f:
 		// TODO
-		v = &m.io[addr-0xff00]
-
-	case addr <= 0xfffe:
-		v = &m.hram[addr-0xff80]
+		return m.io[addr-0xff00]
 
 	case addr == 0xffff:
-		// TODO
+		return tobit(m.intr.enable)
+
+	case addr <= 0xfffe:
+		return m.hram[addr-0xff80]
 
 	}
 
-	return v
+	return 0
 }
 
-func (m *MMU) read(addr uint16) uint8 {
-	ptr := m.pointer(addr)
-	return *ptr
+// Read the byte at addr, where addr is the register's value.
+func (m *MMU) ReadFrom(r *Register) uint8 {
+	return m.Read(r.Get())
 }
 
-func (m *MMU) write(addr uint16, val uint8) {
-	ptr := m.pointer(addr)
-	*ptr = val
+// Read the byte at addr and addr + 1 as a unsigned short.
+func (m *MMU) ReadShort(addr uint16) uint16 {
+	return Endian.Uint16([]uint8{m.Read(addr), m.Read(addr + 1)})
+}
+
+// Write a byte to addr.
+func (m *MMU) Write(addr uint16, val uint8) {
+
+	invalid := false
+
+	switch {
+
+	case addr <= 0x7fff:
+		invalid = true
+
+	case addr <= 0x9fff:
+		m.vram[addr-0x8000] = val
+
+	case addr <= 0xbfff:
+		m.eram[addr-0xa000] = val
+
+	case addr <= 0xdfff:
+		m.wram[addr-0xc000] = val
+
+	case addr <= 0xfdff:
+		m.wram[addr-0xe000] = val
+
+	case addr <= 0xfeff:
+		m.oam[addr-0xfe00] = val
+
+	// I/O
+	case addr == 0xff40:
+		m.ppu.control = val
+
+	case addr == 0xff42:
+		m.ppu.scrollY = val
+
+	case addr == 0xff43:
+		m.ppu.scrollX = val
+
+	case addr == 0xff46:
+		// Copy a region of the cart or RAM to the OAM region.
+		dst := uint16(0xfe00)
+		src := uint16(val) << 8
+
+		for i := uint16(0); i < 160; i++ {
+			m.Write(dst+i, m.Read(src+i))
+		}
+
+	case addr == 0xff0f:
+		m.intr.flags = val
+
+	case addr == 0xffff:
+		if val > 0 {
+			m.intr.enable = true
+		} else {
+			m.intr.enable = false
+		}
+	}
+
+}
+
+// Write a byte to addr, where addr is the register's value.
+func (m *MMU) WriteTo(r *Register, val uint8) {
+	m.Write(r.Get(), val)
+}
+
+// Write an unsigned short to addr and addr + 1.
+func (m *MMU) WriteShort(addr uint16, val uint16) {
+	buf := []uint8{}
+	Endian.PutUint16(buf, val)
+
+	m.Write(addr, buf[0])
+	m.Write(addr+1, buf[1])
 }
