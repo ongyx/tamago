@@ -1,48 +1,52 @@
 package tamago
 
-type button uint8
-
 const (
-	BtnA button = 1 << iota
-	BtnB
-	BtnSelect
-	BtnStart
-	BtnRight
+	BtnRight uint8 = 1 << iota
 	BtnLeft
 	BtnUp
 	BtnDown
+	BtnA
+	BtnB
+	BtnSelect
+	BtnStart
+
+	SelectDir uint8 = 0x10
+	SelectAct uint8 = 0x20
 )
 
 type Input struct {
-	// mode will be true for the action buttons,
-	// false for the directional buttons.
-	action  bool
-	buttons button
+	btns, sel uint8
 }
 
 func NewInput() *Input {
 	// The bits are 1 if there are no keypresses, and 0 if there is a keypress.
-	return &Input{action: true, buttons: button(0xFF)}
+	// Both the directional and action buttons are selected.
+	return &Input{btns: uint8(0xFF)}
 }
 
-func (i *Input) Action(m bool) {
-	i.action = m
+func (i *Input) Press(btn uint8) {
+	i.btns &^= btn
 }
 
-func (i *Input) Press(btn button) {
-	i.buttons &^= btn
+func (i *Input) Release(btn uint8) {
+	i.btns |= btn
 }
 
-func (i *Input) Release(btn button) {
-	i.buttons |= btn
+func (i *Input) Select(v uint8) {
+	i.sel = v & (SelectDir | SelectAct)
 }
 
 func (i *Input) Poll() uint8 {
-	btns := uint8(i.buttons)
 
-	if i.action {
-		return (btns & 0x0F) | 0x10
-	} else {
-		return ((btns & 0xF0) >> 4) | 0x20
+	var v uint8
+
+	if i.sel & SelectDir {
+		v |= (i.btns & 0xf)
 	}
+
+	if i.sel & SelectAct {
+		v |= (i.btns >> 4)
+	}
+
+	return v | i.sel
 }

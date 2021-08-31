@@ -7,26 +7,25 @@ type State struct {
 	AF, BC, DE, HL *Register
 	SP, PC         uint16
 
-	bus     [0xFFFF]uint8
-	stopped bool
-
 	fl    *Flags
 	clock *Clock
+
+	stopped bool
 }
 
 func NewState() *State {
-	s := &State{}
+	s := &State{
+		// The DMG bootrom assigns these values to the registers.
+		// https://gbdev.io/pandocs/Power_Up_Sequence.html#cpu-registers
+		AF: &Register{0x01, 0xb0},
+		BC: &Register{0x00, 0x13},
+		DE: &Register{0x00, 0xd8},
+		HL: &Register{0x01, 0x4d},
+		SP: 0xfffe,
+		PC: 0x100,
+	}
 
 	s.MMU = NewMMU()
-
-	// The DMG bootrom assigns these values to the registers.
-	// https://gbdev.io/pandocs/Power_Up_Sequence.html#cpu-registers
-	s.AF = &Register{0x01, 0xb0}
-	s.BC = &Register{0x00, 0x13}
-	s.DE = &Register{0x00, 0xd8}
-	s.HL = &Register{0x01, 0x4d}
-	s.SP = 0xfffe
-	s.PC = 0x100
 
 	s.fl = NewFlags(s.AF)
 	s.clock = NewClock()

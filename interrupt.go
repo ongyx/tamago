@@ -3,11 +3,11 @@ package tamago
 type iflag uint8
 
 const (
-	VBlank iflag = 1 << iota
-	LCDStat
-	Timer
-	Serial
-	Joypad
+	IRVBlank iflag = 1 << iota
+	IRLCDStat
+	IRTimer
+	IRSerial
+	IRJoypad
 )
 
 // An interrupt is an event that is handled before the next instruction executes.
