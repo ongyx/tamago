@@ -1,32 +1,32 @@
 package tamago
 
-type MMUEntry struct {
+type Entry struct {
 	offset uint16
 	region *Region
 }
 
 type MMU struct {
-	entries []MMUEntry
+	entries []Entry
 
 	cart           *Cart
-	ppu            *PPU
+	render         *Render
 	ram, oam, hram *RAM // ram = external + work ram
 	io             *IO
 }
 
-func NewMMU() *MMU {
+func NewMMU(rr *Renderer) *MMU {
 	m := &MMU{
-		cart: NewCart(),
-		ppu:  NewPPU(),
-		ram:  NewRam(0x4000),
-		oam:  NewRam(0x100),
-		hram: NewRam(0x80),
+		cart:   NewCart(),
+		render: NewRender(rr),
+		ram:    NewRam(0x4000),
+		oam:    NewRam(0x100),
+		hram:   NewRam(0x80),
 	}
 
-	m.io = NewIO(s.ppu)
+	m.io = NewIO(m.render)
 	m.entries = []MMUEntry{
 		{0x7fff, s.cart},
-		{0x9fff, s.ppu},
+		{0x9fff, s.render},
 		{0xfdff, s.ram},
 		{0xfeff, s.oam},
 		{0xff7f, s.io},
@@ -37,11 +37,23 @@ func NewMMU() *MMU {
 	return m
 }
 
-func (m *MMU) Read(addr uint16) uint8 {
-	for e := range m {
+// Return the region addr is in and it's relative offset in the region.
+func (m *MMU) region(addr uint16) (region *Region, offset uint16) {
+	offset := uint16(0)
+
+	for _, e := range m {
 		if addr <= e.offset {
-			return e.region.Read(addr)
+			return e.region, addr - offset
 		}
+		offset = e.offset
+	}
+
+	return nil, 0
+}
+
+func (m *MMU) Read(addr uint16) uint8 {
+	if r, o := m.region(addr); r != nil {
+		return r.Read(o)
 	}
 
 	logger.Printf("MMU: unimplemented read for addr 0x%x", addr)
@@ -59,10 +71,8 @@ func (m *MMU) ReadShort(addr uint16) uint16 {
 }
 
 func (m *MMU) Write(addr uint16, val uint8) {
-	for e := range m {
-		if addr <= e.offset {
-			e.region.Write(addr, val)
-		}
+	if r, o := m.region(addr); r != nil {
+		r.Write(o, val)
 	}
 
 	logger.Printf("MMU: unimplemented write for addr 0x%x (val 0x%x)", addr, val)

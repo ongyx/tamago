@@ -1,5 +1,10 @@
 package tamago
 
+import (
+	"os"
+	"os/signal"
+)
+
 type CPU struct {
 	state *State
 	// Lookup table for instructions
@@ -22,10 +27,6 @@ func (c *CPU) fetch() uint8 {
 }
 
 func (c *CPU) step() {
-	if c.state.stopped {
-		return
-	}
-
 	var ins Instruction
 
 	opcode := c.fetch()
@@ -42,4 +43,39 @@ func (c *CPU) step() {
 	}
 
 	ins.fn(c.state, NewValue(buf))
+}
+
+func (c *CPU) Run() {
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt)
+
+	for {
+		select {
+
+		case sig := <-ch:
+			// ctrl-c
+			return
+
+		default:
+			if !c.state.stopped {
+				c.step()
+			}
+
+		}
+	}
+}
+
+func (c *CPU) LoadROM(name string) error {
+	f, err := os.Open(name)
+	defer f.Close()
+
+	if err != nil {
+		return err
+	}
+
+	if e := c.state.cart.Load(f); e != nil {
+		return e
+	}
+
+	return nil
 }

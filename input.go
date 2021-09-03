@@ -40,11 +40,11 @@ func (i *Input) Poll() uint8 {
 
 	var v uint8
 
-	if i.sel & SelectDir {
+	if (i.sel & SelectDir) > 0 {
 		v |= (i.btns & 0xf)
 	}
 
-	if i.sel & SelectAct {
+	if (i.sel & SelectAct) > 0 {
 		v |= (i.btns >> 4)
 	}
 

@@ -1,9 +1,7 @@
 package tamago
 
-type iflag uint8
-
 const (
-	IRVBlank iflag = 1 << iota
+	IRVBlank uint8 = 1 << iota
 	IRLCDStat
 	IRTimer
 	IRSerial
@@ -13,7 +11,7 @@ const (
 // An interrupt is an event that is handled before the next instruction executes.
 type Interrupt struct {
 	master, enable bool
-	flags          iflag
+	flags          uint8
 }
 
 func NewInterrupt() *Interrupt {

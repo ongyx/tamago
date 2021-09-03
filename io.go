@@ -5,16 +5,16 @@ import (
 )
 
 type IO struct {
-	input *Input
-	intr  *Interrupt
-	ppu   *PPU
+	intr   *Interrupt
+	input  *Input
+	render *Render
 }
 
-func NewIO(ppu *PPU) *IO {
+func NewIO(render *Render) *IO {
 	return &IO{
-		input: NewInput(),
-		intr:  NewInterrupt(),
-		ppu:   ppu,
+		intr:   NewInterrupt(),
+		input:  NewInput(),
+		render: render,
 	}
 }
 
@@ -32,16 +32,16 @@ func (io *IO) Read(addr uint16) uint8 {
 		return uint8(io.intr.flags)
 
 	case 0x0040:
-		return io.ppu.control
+		return io.render.control
 
 	case 0x0042:
-		return io.ppu.scrollY
+		return io.render.scrollY
 
 	case 0x0043:
-		return io.ppu.scrollX
+		return io.render.scrollX
 
 	case 0x0044:
-		return io.ppu.scanline
+		return io.render.scanline
 
 	case 0x00ff:
 		return tobit(io.intr.enable)
@@ -62,16 +62,16 @@ func (io *IO) Write(addr uint16, val uint8) {
 		io.intr.flags = val
 
 	case 0x0040:
-		io.ppu.control = val
+		io.render.control = val
 
 	case 0x0042:
-		io.ppu.scrollY = val
+		io.render.scrollY = val
 
 	case 0x0043:
-		io.ppu.scrollX = val
+		io.render.scrollX = val
 
 	case 0x0044:
-		io.ppu.scanline = val
+		io.render.scanline = val
 
 	case 0x00ff:
 		io.intr.enable = val > 0
