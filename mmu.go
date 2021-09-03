@@ -1,47 +1,47 @@
 package tamago
 
-type Entry struct {
+type entry struct {
 	offset uint16
-	region *Region
+	region Region
 }
 
 type MMU struct {
-	entries []Entry
+	entries []entry
 
 	cart           *Cart
-	render         *Render
+	rr             Renderer
 	ram, oam, hram *RAM // ram = external + work ram
 	io             *IO
 }
 
-func NewMMU(rr *Renderer) *MMU {
+func NewMMU(rr Renderer) *MMU {
 	m := &MMU{
-		cart:   NewCart(),
-		render: NewRender(rr),
-		ram:    NewRam(0x4000),
-		oam:    NewRam(0x100),
-		hram:   NewRam(0x80),
+		cart: NewCart(),
+		rr:   rr,
+		ram:  NewRAM(0x4000),
+		oam:  NewRAM(0x100),
+		hram: NewRAM(0x80),
 	}
 
-	m.io = NewIO(m.render)
-	m.entries = []MMUEntry{
-		{0x7fff, s.cart},
-		{0x9fff, s.render},
-		{0xfdff, s.ram},
-		{0xfeff, s.oam},
-		{0xff7f, s.io},
-		{0xfffe, s.hram},
-		{0xffff, s.io},
+	m.io = NewIO(m.rr)
+	m.entries = []entry{
+		{0x7fff, m.cart},
+		{0x9fff, m.rr},
+		{0xfdff, m.ram},
+		{0xfeff, m.oam},
+		{0xff7f, m.io},
+		{0xfffe, m.hram},
+		{0xffff, m.io},
 	}
 
 	return m
 }
 
 // Return the region addr is in and it's relative offset in the region.
-func (m *MMU) region(addr uint16) (region *Region, offset uint16) {
+func (m *MMU) region(addr uint16) (Region, uint16) {
 	offset := uint16(0)
 
-	for _, e := range m {
+	for _, e := range m.entries {
 		if addr <= e.offset {
 			return e.region, addr - offset
 		}

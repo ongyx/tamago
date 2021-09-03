@@ -5,16 +5,18 @@ import (
 )
 
 type IO struct {
-	intr   *Interrupt
-	input  *Input
-	render *Render
+	rr    Renderer
+	rrst  *Status
+	intr  *Interrupt
+	input *Input
 }
 
-func NewIO(render *Render) *IO {
+func NewIO(rr Renderer) *IO {
 	return &IO{
-		intr:   NewInterrupt(),
-		input:  NewInput(),
-		render: render,
+		rr:    rr,
+		rrst:  rr.Status(),
+		intr:  NewInterrupt(),
+		input: NewInput(),
 	}
 }
 
@@ -32,16 +34,16 @@ func (io *IO) Read(addr uint16) uint8 {
 		return uint8(io.intr.flags)
 
 	case 0x0040:
-		return io.render.control
+		return io.rrst.control
 
 	case 0x0042:
-		return io.render.scrollY
+		return io.rrst.scrollY
 
 	case 0x0043:
-		return io.render.scrollX
+		return io.rrst.scrollX
 
 	case 0x0044:
-		return io.render.scanline
+		return io.rrst.scanline
 
 	case 0x00ff:
 		return tobit(io.intr.enable)
@@ -62,16 +64,16 @@ func (io *IO) Write(addr uint16, val uint8) {
 		io.intr.flags = val
 
 	case 0x0040:
-		io.render.control = val
+		io.rrst.control = val
 
 	case 0x0042:
-		io.render.scrollY = val
+		io.rrst.scrollY = val
 
 	case 0x0043:
-		io.render.scrollX = val
+		io.rrst.scrollX = val
 
 	case 0x0044:
-		io.render.scanline = val
+		io.rrst.scanline = val
 
 	case 0x00ff:
 		io.intr.enable = val > 0

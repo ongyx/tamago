@@ -13,7 +13,7 @@ type State struct {
 	stopped bool
 }
 
-func NewState() *State {
+func NewState(rr Renderer) *State {
 	s := &State{
 		// The DMG bootrom assigns these values to the registers.
 		// https://gbdev.io/pandocs/Power_Up_Sequence.html#cpu-registers
@@ -25,7 +25,7 @@ func NewState() *State {
 		PC: 0x100,
 	}
 
-	s.MMU = NewMMU()
+	s.MMU = NewMMU(rr)
 
 	s.fl = NewFlags(s.AF)
 	s.clock = NewClock()

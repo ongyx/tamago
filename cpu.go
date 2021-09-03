@@ -12,9 +12,9 @@ type CPU struct {
 	xtable []Instruction
 }
 
-func NewCPU() *CPU {
+func NewCPU(rr Renderer) *CPU {
 	return &CPU{
-		state:  NewState(),
+		state:  NewState(rr),
 		table:  ops[:],
 		xtable: cbops[:],
 	}
@@ -54,6 +54,7 @@ func (c *CPU) Run() {
 
 		case sig := <-ch:
 			// ctrl-c
+			logger.Println("caught signal " + sig.String())
 			return
 
 		default:
