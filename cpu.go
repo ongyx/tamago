@@ -38,15 +38,15 @@ func (c *CPU) step() {
 	}
 
 	buf := make([]uint8, 2)
-	for i := 1; i <= ins.length; i++ {
-		buf = append(buf, c.fetch())
+	for i := 0; i < ins.length; i++ {
+		buf[i] = c.fetch()
 	}
 
 	if c.state.PC == 0x100 {
 		c.state.hasBoot = false
 	}
 
-	logger.Printf("executing %s (%v)", ins.asm, buf)
+	logger.Printf("[0x%x] executing %s %v", c.state.PC, ins.asm, buf)
 
 	ins.fn(c.state, NewValue(buf))
 }
