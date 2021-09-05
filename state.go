@@ -1,5 +1,18 @@
 package tamago
 
+import "fmt"
+
+const debug = `
+AF: %v
+BC: %v
+DE: %v
+HL: %v
+SP: %d
+PC: %d
+clock (t cycles): %d
+stopped: %t
+`
+
 // State represents the current state of the emulation at some point in time.
 type State struct {
 	*MMU
@@ -68,4 +81,13 @@ func (s *State) Pop() uint16 {
 	s.SP += 2
 
 	return v
+}
+
+/*
+	Misc functions
+*/
+
+// Show the contents of the registers and dump the contents of memory for debugging.
+func (s *State) String() string {
+	return fmt.Sprintf(debug, s.AF, s.BC, s.DE, s.HL, s.SP, s.PC, s.clock.t, s.stopped)
 }

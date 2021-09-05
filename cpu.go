@@ -42,6 +42,12 @@ func (c *CPU) step() {
 		buf = append(buf, c.fetch())
 	}
 
+	if c.state.PC == 0x100 {
+		c.state.hasBoot = false
+	}
+
+	logger.Printf("executing %s (%v)", ins.asm, buf)
+
 	ins.fn(c.state, NewValue(buf))
 }
 
@@ -66,17 +72,34 @@ func (c *CPU) Run() {
 	}
 }
 
-func (c *CPU) LoadROM(name string) error {
-	f, err := os.Open(name)
+func (c *CPU) Load(rom string) error {
+	f, err := os.Open(rom)
 	defer f.Close()
 
 	if err != nil {
 		return err
 	}
 
-	if e := c.state.cart.Load(f); e != nil {
+	if e := c.state.Load(f); e != nil {
 		return e
 	}
+
+	return nil
+}
+
+func (c *CPU) LoadBoot(rom string) error {
+	f, err := os.Open(rom)
+	defer f.Close()
+
+	if err != nil {
+		return err
+	}
+
+	if e := c.state.LoadBoot(f); e != nil {
+		return e
+	}
+
+	c.state.PC = 0x0
 
 	return nil
 }

@@ -31,7 +31,7 @@ func (u16) From(lo, hi uint8) uint16 {
 
 // Set a single 16-bit unsigned int into two bytes.
 func (u16) To(lo, hi *uint8, v uint16) {
-	buf := []byte{}
+	buf := make([]byte, 2)
 	Endian.PutUint16(buf, v)
 	*lo = buf[0]
 	*hi = buf[1]

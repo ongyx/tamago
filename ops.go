@@ -2514,7 +2514,7 @@ var ops = [256]Instruction{
 		cycles: 4,
 
 		fn: func(s *State, v Value) {
-			s.io.intr.Enable()
+			s.ir.master = 1
 			s.PC = s.Pop()
 		},
 	},
@@ -2767,7 +2767,7 @@ var ops = [256]Instruction{
 		cycles: 1,
 
 		fn: func(s *State, v Value) {
-			s.io.intr.Disable()
+			s.ir.master = 0
 		},
 	},
 
@@ -2855,7 +2855,7 @@ var ops = [256]Instruction{
 		cycles: 1,
 
 		fn: func(s *State, v Value) {
-			s.io.intr.Enable()
+			s.ir.master = 1
 		},
 	},
 
