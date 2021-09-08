@@ -23,8 +23,7 @@ type MMU struct {
 	input  *Input
 	render *Render
 
-	// true if a bootrom is loaded and the program counter is less than 0x100, otherwise false.
-	hasBoot bool
+	hasBoot, hasROM bool
 }
 
 func NewMMU(rr Renderer) *MMU {
@@ -95,6 +94,10 @@ func (m *MMU) Read(addr uint16) uint8 {
 	case addr == 0xff44:
 		return m.render.scanline
 
+	case addr <= 0xff7f:
+		// unimplemented i/o
+		return 0x0
+
 	/*
 		I/O end
 	*/
@@ -164,6 +167,9 @@ func (m *MMU) Write(addr uint16, val uint8) {
 	case addr == 0xff44:
 		m.render.scanline = val
 
+	case addr <= 0xff80:
+		// unimplemented i/o
+
 	/*
 		I/O end
 	*/
@@ -200,7 +206,7 @@ func (m *MMU) WriteTo(r *Register, val uint8) {
 
 // Write an unsigned short to addr and addr + 1.
 func (m *MMU) WriteShort(addr uint16, val uint16) {
-	buf := []uint8{}
+	buf := make([]uint8, 2)
 	Endian.PutUint16(buf, val)
 
 	m.Write(addr, buf[0])
@@ -220,6 +226,7 @@ func (m *MMU) Load(rom io.Reader) error {
 	}
 
 	copy(m.rom[:], buf)
+	m.hasROM = true
 
 	return nil
 }

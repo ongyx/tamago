@@ -32,10 +32,10 @@ func main() {
 
 		if rom != "" {
 			cpu.Load(rom)
-		} else {
-			fmt.Println("warning: no rom!")
 		}
 
-		cpu.Run()
+		if err := cpu.Run(); err != nil {
+			fmt.Println(err)
+		}
 	}
 }

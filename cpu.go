@@ -1,8 +1,13 @@
 package tamago
 
 import (
+	"errors"
 	"os"
 	"os/signal"
+)
+
+var (
+	NoROMErr = errors.New("No bootrom and/or rom loaded!")
 )
 
 type CPU struct {
@@ -41,17 +46,22 @@ func (c *CPU) step() {
 	for i := 0; i < ins.length; i++ {
 		buf[i] = c.fetch()
 	}
+	value := NewValue(buf)
 
 	if c.state.PC == 0x100 {
 		c.state.hasBoot = false
 	}
 
-	logger.Printf("[0x%x] executing %s %v", c.state.PC, ins.asm, buf)
+	logger.Printf("[0x%x] executing %s", c.state.PC, ins.Asm(value))
 
-	ins.fn(c.state, NewValue(buf))
+	ins.fn(c.state, value)
 }
 
-func (c *CPU) Run() {
+func (c *CPU) Run() error {
+	if !(c.state.hasBoot || c.state.hasROM) {
+		return NoROMErr
+	}
+
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt)
 
@@ -61,7 +71,7 @@ func (c *CPU) Run() {
 		case sig := <-ch:
 			// ctrl-c
 			logger.Println("caught signal " + sig.String())
-			return
+			return nil
 
 		default:
 			if !c.state.stopped {

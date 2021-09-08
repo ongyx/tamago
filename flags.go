@@ -70,7 +70,19 @@ func (fl *Flags) setIfZero(v uint8) {
 }
 
 func (fl *Flags) setIfCarry(v interface{}) {
-	if v.(int) != 0 {
+
+	var i int
+
+	switch iv := v.(type) {
+	case uint8:
+		i = int(iv)
+	case uint16:
+		i = int(iv)
+	case int:
+		i = iv
+	}
+
+	if i > 0 {
 		fl.Set(Carry)
 	} else {
 		fl.Clear(Carry)

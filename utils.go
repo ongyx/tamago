@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"log"
 	"os"
+	"strconv"
 )
 
 var (
@@ -13,13 +14,16 @@ var (
 	U16 = u16{}
 )
 
-// Convert a boolean into 0 if false or 1 if true.
 func tobit(b bool) uint8 {
 	if b {
 		return 1
 	} else {
 		return 0
 	}
+}
+
+func tohex(n int64) string {
+	return strconv.FormatInt(n, 16)
 }
 
 type u16 struct{}
