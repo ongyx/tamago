@@ -11,7 +11,8 @@ var (
 )
 
 type CPU struct {
-	state *State
+	*State
+
 	// Lookup table for instructions
 	table  []Instruction
 	xtable []Instruction
@@ -19,15 +20,15 @@ type CPU struct {
 
 func NewCPU(rr Renderer) *CPU {
 	return &CPU{
-		state:  NewState(rr),
+		State:  NewState(rr),
 		table:  ops[:],
 		xtable: cbops[:],
 	}
 }
 
 func (c *CPU) fetch() uint8 {
-	b := c.state.Read(c.state.PC)
-	c.state.PC++
+	b := c.Read(c.PC)
+	c.PC++
 	return b
 }
 
@@ -48,17 +49,19 @@ func (c *CPU) step() {
 	}
 	value := NewValue(buf)
 
-	if c.state.PC == 0x100 {
-		c.state.hasBoot = false
+	if c.PC == 0x100 {
+		c.hasBoot = false
 	}
 
-	logger.Printf("[0x%x] executing %s", c.state.PC, ins.Asm(value))
+	logger.Printf("[0x%x] executing %s", c.PC, ins.Asm(value))
 
-	ins.fn(c.state, value)
+	ins.fn(c.State, value)
+	c.clock.Step(ins.cycles)
+	c.render.step(c.clock)
 }
 
 func (c *CPU) Run() error {
-	if !(c.state.hasBoot || c.state.hasROM) {
+	if !(c.hasBoot || c.hasROM) {
 		return NoROMErr
 	}
 
@@ -74,42 +77,10 @@ func (c *CPU) Run() error {
 			return nil
 
 		default:
-			if !c.state.stopped {
+			if !c.stopped {
 				c.step()
 			}
 
 		}
 	}
-}
-
-func (c *CPU) Load(rom string) error {
-	f, err := os.Open(rom)
-	defer f.Close()
-
-	if err != nil {
-		return err
-	}
-
-	if e := c.state.Load(f); e != nil {
-		return e
-	}
-
-	return nil
-}
-
-func (c *CPU) LoadBoot(rom string) error {
-	f, err := os.Open(rom)
-	defer f.Close()
-
-	if err != nil {
-		return err
-	}
-
-	if e := c.state.LoadBoot(f); e != nil {
-		return e
-	}
-
-	c.state.PC = 0x0
-
-	return nil
 }

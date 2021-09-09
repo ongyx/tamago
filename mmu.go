@@ -92,7 +92,7 @@ func (m *MMU) Read(addr uint16) uint8 {
 		return m.render.scrollX
 
 	case addr == 0xff44:
-		return m.render.scanline
+		return m.render.line
 
 	case addr <= 0xff7f:
 		// unimplemented i/o
@@ -165,7 +165,7 @@ func (m *MMU) Write(addr uint16, val uint8) {
 		m.render.scrollX = val
 
 	case addr == 0xff44:
-		m.render.scanline = val
+		m.render.line = val
 
 	case addr <= 0xff80:
 		// unimplemented i/o
@@ -213,8 +213,8 @@ func (m *MMU) WriteShort(addr uint16, val uint16) {
 	m.Write(addr+1, buf[1])
 }
 
-// Load a cartriage from a file.
-func (m *MMU) Load(rom io.Reader) error {
+// Load a cartriage from a reader.
+func (m *MMU) LoadFrom(rom io.Reader) error {
 	buf, err := io.ReadAll(rom)
 	if err != nil {
 		return err
@@ -231,8 +231,24 @@ func (m *MMU) Load(rom io.Reader) error {
 	return nil
 }
 
-// Load a bootrom from a file.
-func (m *MMU) LoadBoot(rom io.Reader) error {
+// Load a cartriage from a filename.
+func (m *MMU) Load(rom string) error {
+	f, err := os.Open(rom)
+	defer f.Close()
+
+	if err != nil {
+		return err
+	}
+
+	if e := m.LoadFrom(f); e != nil {
+		return e
+	}
+
+	return nil
+}
+
+// Load a bootrom from a reader.
+func (m *MMU) LoadBootFrom(rom io.Reader) error {
 	buf, err := io.ReadAll(rom)
 	if err != nil {
 		return err
@@ -244,6 +260,22 @@ func (m *MMU) LoadBoot(rom io.Reader) error {
 
 	copy(m.bootrom[:], buf)
 	m.hasBoot = true
+
+	return nil
+}
+
+// Load a bootrom from a filename.
+func (m *MMU) LoadBoot(rom string) error {
+	f, err := os.Open(rom)
+	defer f.Close()
+
+	if err != nil {
+		return err
+	}
+
+	if e := m.LoadBootFrom(f); e != nil {
+		return e
+	}
 
 	return nil
 }

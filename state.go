@@ -1,6 +1,9 @@
 package tamago
 
-import "fmt"
+import (
+	"fmt"
+	"io"
+)
 
 const debug = `
 AF: %v
@@ -90,4 +93,25 @@ func (s *State) Pop() uint16 {
 // Show the contents of the registers and dump the contents of memory for debugging.
 func (s *State) String() string {
 	return fmt.Sprintf(debug, s.AF, s.BC, s.DE, s.HL, s.SP, s.PC, s.clock.t, s.stopped)
+}
+
+// This shadows the embedded MMU functions so the program counter can be set correctly.
+func (s *State) LoadBootFrom(rom io.Reader) error {
+	if err := s.MMU.LoadBootFrom(rom); err != nil {
+		return err
+	}
+
+	s.PC = 0
+
+	return nil
+}
+
+func (s *State) LoadBoot(rom string) error {
+	if err := s.MMU.LoadBoot(rom); err != nil {
+		return err
+	}
+
+	s.PC = 0
+
+	return nil
 }

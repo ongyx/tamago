@@ -27,7 +27,6 @@ var (
 
 type DummyRenderer struct{}
 
-func (dr *DummyRenderer) Read(x, y int) Colour     { return Colour{0, 0, 0, 0} }
 func (dr *DummyRenderer) Write(x, y int, c Colour) {}
 
 func input(prompt string) string {
@@ -83,13 +82,13 @@ loop:
 			}
 
 		case "show":
-			fmt.Println(cpu.state.String())
+			fmt.Println(cpu.String())
 
 		case "dump":
-			cpu.state.DebugDump()
+			cpu.DebugDump()
 
 		case "peek":
-			fmt.Println(cpu.table[cpu.state.PC].asm)
+			fmt.Println(cpu.table[cpu.PC].asm)
 
 		case "exit":
 			break loop
