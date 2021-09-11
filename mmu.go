@@ -37,6 +37,8 @@ func NewMMU(rr Renderer) *MMU {
 }
 
 func (m *MMU) Read(addr uint16) uint8 {
+	logger.Printf("reading from addr 0x%x", addr)
+
 	switch {
 
 	// rom
@@ -83,7 +85,7 @@ func (m *MMU) Read(addr uint16) uint8 {
 		return uint8(m.ir.flags)
 
 	case addr == 0xff40:
-		return m.render.control
+		return m.render.lcdc.uint8
 
 	case addr == 0xff42:
 		return m.render.scrollY
@@ -96,7 +98,6 @@ func (m *MMU) Read(addr uint16) uint8 {
 
 	case addr <= 0xff7f:
 		// unimplemented i/o
-		return 0x0
 
 	/*
 		I/O end
@@ -117,6 +118,8 @@ func (m *MMU) Read(addr uint16) uint8 {
 }
 
 func (m *MMU) Write(addr uint16, val uint8) {
+	logger.Printf("writing to addr 0x%x", addr)
+
 	impl := true
 
 	switch {
@@ -128,6 +131,10 @@ func (m *MMU) Write(addr uint16, val uint8) {
 	// video ram
 	case addr <= 0x9fff:
 		m.vram[addr-0x8000] = val
+
+		if addr <= 0x97ff {
+			m.render.update(addr)
+		}
 
 	// external + work ram
 	case addr <= 0xdfff:
@@ -156,7 +163,7 @@ func (m *MMU) Write(addr uint16, val uint8) {
 		m.ir.flags = iflag(val)
 
 	case addr == 0xff40:
-		m.render.control = val
+		m.render.lcdc.uint8 = val
 
 	case addr == 0xff42:
 		m.render.scrollY = val
@@ -169,6 +176,7 @@ func (m *MMU) Write(addr uint16, val uint8) {
 
 	case addr <= 0xff80:
 		// unimplemented i/o
+		impl = false
 
 	/*
 		I/O end
