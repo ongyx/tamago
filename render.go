@@ -1,43 +1,66 @@
 package tamago
 
-type tile [8][8]uint8
+import (
+	"image/color"
 
-var mode = struct {
-	HBlank, VBlank, OAM, VRAM uint8
-}{
-	0, 1, 2, 3,
-}
+	"github.com/hajimehoshi/ebiten/v2"
+)
 
-// Renderer handles the drawing of pixels on a display (or internal framebuffer).
-type Renderer interface {
-	Write(x, y int, c Colour)
-}
+const (
+	renderWidth  = 160
+	renderHeight = 144
+)
 
-// Render wraps a renderer to draw sprites from VRAM.
+type (
+	Tile    [8][8]uint8
+	Tileset [384]Tile
+	Palette [4]color.Color
+)
+
+var (
+	mode = struct {
+		HBlank, VBlank, OAM, VRAM uint8
+	}{
+		0, 1, 2, 3,
+	}
+
+	White     = color.RGBA{255, 255, 255, 0}
+	LightGray = color.RGBA{192, 192, 192, 0}
+	DarkGray  = color.RGBA{96, 96, 96, 0}
+	Black     = color.RGBA{0, 0, 0, 0}
+
+	DefaultPalette = Palette{White, LightGray, DarkGray, Black}
+)
+
+// Render draws tiles from VRAM onto a screen.
+// sx and sy are the offsets of the display (size 160x144)
+// from (0,0) at the top left of the background map (size 256x256).
 type Render struct {
-	scrollX, scrollY, mode, line uint8
-	tick                         int
-	lcdc                         *Bits
-	tileset                      [384]tile
-	palette                      Palette
+	sx, sy, mode, line uint8
+	tick               int
+	lcdc               *Bits
+
+	tileset Tileset
+	palette Palette
+	screen  *ebiten.Image
 
 	vram []uint8
 	oam  []uint8
-
-	rr Renderer
 }
 
-func NewRender(vram, oam []uint8, rr Renderer) *Render {
+func NewRender(vram, oam []uint8) *Render {
+	screen := ebiten.NewImage(renderWidth, renderHeight)
+
 	return &Render{
 		lcdc:    &Bits{0},
 		palette: DefaultPalette,
+		screen:  screen,
 		vram:    vram,
 		oam:     oam,
-		rr:      rr,
 	}
 }
 
-// Given an address in VRAM (8000-9fff) and the value being written to it, update the tileset.
+// Given an address in VRAM (8000-97ff) and the value being written to it, update the tileset.
 func (r *Render) update(addr uint16) {
 	offset := addr - 0x8000
 	index := offset / 16
@@ -62,46 +85,56 @@ func (r *Render) update(addr uint16) {
 	}
 }
 
-func (r *Render) tile(addr uint16) int {
-	tile := int(r.vram[addr])
+// Return the VRAM offset of the current tile.
+func (r *Render) offset() uint16 {
+	var base uint16
 
-	if !r.lcdc.At(4) && tile < 128 {
-		// tile map starts at $8800, use signed addressing
-		tile += 256
+	// Get the background map's base address.
+	if r.lcdc.At(3) {
+		base = 0x1c00
+	} else {
+		base = 0x1800
 	}
 
-	return tile
+	// Since each tile is 8x8 pixels, the address of the tile reference in VRAM is:
+	// map offset + ((y offset + display offset) / 8) + (x offset / 8)
+	// because all offsets are in pixels.
+	return base + uint16((r.sy+r.line)/8) + uint16(r.sx/8)
+}
+
+// Return the tile pointed to by the VRAM offset.
+func (r *Render) tile(offset uint16) Tile {
+	idx := int(r.vram[offset])
+
+	if !r.lcdc.At(4) && idx < 128 {
+		idx += 256
+	}
+
+	return r.tileset[idx]
 }
 
 // Render the next scanline.
 func (r *Render) scanline() {
-	var offset uint16
+	offset := r.offset()
+	tile := r.tile(offset)
 
-	// background tile map offset
-	if r.lcdc.At(3) {
-		offset = 0x1c00
-	} else {
-		offset = 0x1800
-	}
+	// Calculate the x and y offset of the current pixel in the tile.
+	y := (r.sy + r.line) % 8
+	x := r.sx % 8
 
-	offset += uint16(r.line+r.scrollY) / 8
-
-	line := r.scrollX / 8
-	y := (r.line + r.scrollY) & 0x7
-	x := r.scrollX & 0x7
-
-	tile := r.tile(offset + uint16(line))
-
-	for i := 0; i < 160; i++ {
-		colour := r.palette[r.tileset[tile][y][x]]
-		r.rr.Write(i, int(r.line), colour)
+	dy := int(r.line)
+	for dx := 0; dx < 160; x++ {
+		logger.Printf("drawing pixel at (%d,%d) with tile offset (%d,%d)", dx, dy, x, y)
+		// Draw the pixel at the offsets in the tile.
+		colour := r.palette[tile[y][x]]
+		r.screen.Set(dx, dy, colour)
 
 		x++
-
 		if x == 8 {
+			// Reached the end of this tile, get the tile referred to by the next offset.
 			x = 0
-			line = (line + 1) & 31
-			tile = r.tile(offset + uint16(line))
+			offset++
+			tile = r.tile(offset)
 		}
 	}
 }

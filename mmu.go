@@ -26,12 +26,12 @@ type MMU struct {
 	hasBoot, hasROM bool
 }
 
-func NewMMU(rr Renderer) *MMU {
+func NewMMU() *MMU {
 	m := &MMU{
 		ir:    NewInterrupt(),
 		input: NewInput(),
 	}
-	m.render = NewRender(m.vram[:], m.oam[:], rr)
+	m.render = NewRender(m.vram[:], m.oam[:])
 
 	return m
 }
@@ -88,10 +88,10 @@ func (m *MMU) Read(addr uint16) uint8 {
 		return m.render.lcdc.uint8
 
 	case addr == 0xff42:
-		return m.render.scrollY
+		return m.render.sy
 
 	case addr == 0xff43:
-		return m.render.scrollX
+		return m.render.sx
 
 	case addr == 0xff44:
 		return m.render.line
@@ -166,10 +166,10 @@ func (m *MMU) Write(addr uint16, val uint8) {
 		m.render.lcdc.uint8 = val
 
 	case addr == 0xff42:
-		m.render.scrollY = val
+		m.render.sy = val
 
 	case addr == 0xff43:
-		m.render.scrollX = val
+		m.render.sx = val
 
 	case addr == 0xff44:
 		m.render.line = val

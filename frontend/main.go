@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/hajimehoshi/ebiten/v2"
+
 	"github.com/ongyx/tamago"
 )
 
@@ -18,28 +20,28 @@ func init() {
 	flag.StringVar(&bootrom, "bootrom", "", "bootrom file")
 }
 
-type DummyRenderer struct{}
-
-func (rr DummyRenderer) Write(x, y int, c tamago.Colour) {}
-
 func main() {
-	cpu := tamago.NewCPU(DummyRenderer{})
+	game := tamago.NewGame()
 
 	flag.Parse()
 
+	// TODO: integrate debug with game
 	if debug {
-		cpu.DebugRun()
+		game.C.DebugRun()
+		return
 	}
 
 	if bootrom != "" {
-		cpu.LoadBoot(bootrom)
+		game.C.LoadBoot(bootrom)
 	}
 
 	if rom != "" {
-		cpu.Load(rom)
+		game.C.Load(rom)
 	}
 
-	if err := cpu.Run(); err != nil {
+	ebiten.SetWindowSize(256, 256)
+	ebiten.SetWindowTitle("tamago")
+	if err := ebiten.RunGame(game); err != nil {
 		fmt.Println(err)
 	}
 
