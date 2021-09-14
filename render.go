@@ -1,8 +1,6 @@
 package tamago
 
 import (
-	"image/color"
-
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -14,23 +12,13 @@ const (
 type (
 	Tile    [8][8]uint8
 	Tileset [384]Tile
-	Palette [4]color.Color
 )
 
-var (
-	mode = struct {
-		HBlank, VBlank, OAM, VRAM uint8
-	}{
-		0, 1, 2, 3,
-	}
-
-	White     = color.RGBA{255, 255, 255, 0}
-	LightGray = color.RGBA{192, 192, 192, 0}
-	DarkGray  = color.RGBA{96, 96, 96, 0}
-	Black     = color.RGBA{0, 0, 0, 0}
-
-	DefaultPalette = Palette{White, LightGray, DarkGray, Black}
-)
+var mode = struct {
+	HBlank, VBlank, OAM, VRAM uint8
+}{
+	0, 1, 2, 3,
+}
 
 // Render draws tiles from VRAM onto a screen.
 // sx and sy are the offsets of the display (size 160x144)
@@ -123,7 +111,7 @@ func (r *Render) scanline() {
 	x := r.sx % 8
 
 	dy := int(r.line)
-	for dx := 0; dx < 160; x++ {
+	for dx := 0; dx < 160; dx++ {
 		logger.Printf("drawing pixel at (%d,%d) with tile offset (%d,%d)", dx, dy, x, y)
 		// Draw the pixel at the offsets in the tile.
 		colour := r.palette[tile[y][x]]
