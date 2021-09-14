@@ -37,12 +37,10 @@ type Render struct {
 }
 
 func NewRender(vram, oam []uint8) *Render {
-	screen := ebiten.NewImage(renderWidth, renderHeight)
-
 	return &Render{
 		lcdc:    &Bits{0},
 		palette: DefaultPalette,
-		screen:  screen,
+		screen:  ebiten.NewImage(renderWidth, renderHeight),
 		vram:    vram,
 		oam:     oam,
 	}
@@ -101,7 +99,7 @@ func (r *Render) tile(offset uint16) Tile {
 	return r.tileset[idx]
 }
 
-// Render the next scanline.
+// Render the next scanline on screen.
 func (r *Render) scanline() {
 	offset := r.offset()
 	tile := r.tile(offset)
@@ -112,9 +110,10 @@ func (r *Render) scanline() {
 
 	dy := int(r.line)
 	for dx := 0; dx < 160; dx++ {
-		logger.Printf("drawing pixel at (%d,%d) with tile offset (%d,%d)", dx, dy, x, y)
-		// Draw the pixel at the offsets in the tile.
 		colour := r.palette[tile[y][x]]
+
+		// Draw the pixel at the offsets in the tile.
+		logger.Printf("drawing %v at (%d,%d)", colour, dx, dy)
 		r.screen.Set(dx, dy, colour)
 
 		x++
@@ -127,7 +126,7 @@ func (r *Render) scanline() {
 	}
 }
 
-// Update the GPU timing, given the main state's clock.
+// Given the emulation state clock, update the render.
 func (r *Render) step(c *Clock) {
 	r.tick += c.t
 
