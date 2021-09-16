@@ -1,30 +1,38 @@
 package tamago
 
-type iflag uint8
-
 const (
-	VBlank iflag = 1 << iota
+	VBlank uint8 = 1 << iota
 	LCDStat
 	Timer
 	Serial
 	Joypad
 )
 
-// A function that is called when the registered interrupt fires.
-type Handler func(iflag uint8)
+type handler struct {
+	flag uint8
+	fn   func()
+}
 
 // An interrupt is an event that is handled before the next instruction executes.
 type Interrupt struct {
-	master, enable uint8
-	flags          iflag
-	handler        map[iflag]Handler
+	master             bool
+	enabled, requested uint8
+	handlers           []handler
 }
 
 func NewInterrupt() *Interrupt {
-	return &Interrupt{handler: make(map[iflag]Handler)}
+	return &Interrupt{}
 }
 
-// Register a handler for a callback.
-func (ir *Interrupt) Register(f iflag, h Handler) {
-	ir.handler[f] = h
+func (ir *Interrupt) step(s *State) {
+	flags := ir.enabled & ir.requested
+
+	if ir.master && flags > 0 {
+		for _, handler := range ir.handlers {
+			if (flags & handler.flag) != 0 {
+				ir.requested &^= handler.flag
+				handler.fn()
+			}
+		}
+	}
 }

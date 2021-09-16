@@ -1,17 +1,14 @@
 package tamago
 
 import (
+	"image/color"
+
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
 const (
 	renderWidth  = 160
 	renderHeight = 144
-)
-
-type (
-	Tile    [8][8]uint8
-	Tileset [384]Tile
 )
 
 var mode = struct {
@@ -28,9 +25,11 @@ type Render struct {
 	tick               int
 	lcdc               *Bits
 
-	tileset Tileset
-	palette Palette
-	screen  *ebiten.Image
+	tileset    Tileset
+	spriteData SpriteData
+
+	bg, obj0, obj1 Palette
+	screen         *ebiten.Image
 
 	vram []uint8
 	oam  []uint8
@@ -38,17 +37,18 @@ type Render struct {
 
 func NewRender(vram, oam []uint8) *Render {
 	return &Render{
-		lcdc:    &Bits{0},
-		palette: DefaultPalette,
-		screen:  ebiten.NewImage(renderWidth, renderHeight),
-		vram:    vram,
-		oam:     oam,
+		lcdc:   &Bits{0},
+		bg:     DefaultPalette,
+		obj0:   DefaultPalette,
+		obj1:   DefaultPalette,
+		screen: ebiten.NewImage(renderWidth, renderHeight),
+		vram:   vram,
+		oam:    oam,
 	}
 }
 
-// Given an address in VRAM (8000-97ff) and the value being written to it, update the tileset.
-func (r *Render) update(addr uint16) {
-	offset := addr - 0x8000
+// Given an offset in VRAM, update the tileset.
+func (r *Render) updateTile(offset uint16) {
 	index := offset / 16
 
 	lo := Bits{r.vram[offset]}
@@ -68,6 +68,42 @@ func (r *Render) update(addr uint16) {
 		}
 
 		r.tileset[index][y][x] = pixel
+	}
+}
+
+// Given an offset in OAM, update the sprite data.
+func (r *Render) updateSprite(offset uint16) {
+	val := r.oam[offset]
+	sprite := &r.spriteData[offset/4]
+
+	switch offset % 4 {
+	case 0:
+		sprite.y = val
+	case 1:
+		sprite.x = val
+	case 2:
+		sprite.tile = val
+	case 3:
+		sprite.options.uint8 = val
+	}
+}
+
+// Update a palette (bg, obj0 or obj1) with a value
+func (r *Render) updatePalette(p *Palette, v uint8) {
+	for i := 0; i < 4; i++ {
+		colour := &p[i]
+
+		// select each set of 2 bits from 0 to 7.
+		switch (v >> (i * 2)) & 0x3 {
+		case 0:
+			*colour = White
+		case 1:
+			*colour = LightGrey
+		case 2:
+			*colour = DarkGrey
+		case 3:
+			*colour = Black
+		}
 	}
 }
 
@@ -99,31 +135,99 @@ func (r *Render) tile(offset uint16) Tile {
 	return r.tileset[idx]
 }
 
+// Check whether the sprite should be rendered according to its priority,
+// position in the scanline and if the current position is transparent.
+func (r *Render) shouldRender(s *Sprite, pos int, scanline []color.Color) {
+}
+
 // Render the next scanline on screen.
 func (r *Render) scanline() {
-	offset := r.offset()
-	tile := r.tile(offset)
-
-	// Calculate the x and y offset of the current pixel in the tile.
-	y := (r.sy + r.line) % 8
-	x := r.sx % 8
+	var scanline [160]color.Color
 
 	dy := int(r.line)
-	for dx := 0; dx < 160; dx++ {
-		colour := r.palette[tile[y][x]]
 
-		// Draw the pixel at the offsets in the tile.
-		logger.Printf("drawing %v at (%d,%d)", colour, dx, dy)
-		r.screen.Set(dx, dy, colour)
+	// background enable
+	if r.lcdc.At(0) {
+		offset := r.offset()
+		tile := r.tile(offset)
 
-		x++
-		if x == 8 {
-			// Reached the end of this tile, get the tile referred to by the next offset.
-			x = 0
-			offset++
-			tile = r.tile(offset)
+		// Calculate the x and y offset of the current pixel in the tile.
+		y := (r.sy + r.line) % 8
+		x := r.sx % 8
+
+		for dx := range scanline {
+			scanline[dx] = r.bg[tile[y][x]]
+
+			x++
+			if x == 8 {
+				// Reached the end of this tile, get the tile referred to by the next offset.
+				x = 0
+				offset++
+				tile = r.tile(offset)
+			}
 		}
 	}
+
+	// object enable
+	if r.lcdc.At(1) {
+		for i := 0; i < 40; i++ {
+			sprite := r.spriteData[i]
+
+			var sx, sy int
+			sx = int(sprite.x) - 8
+			sy = int(sprite.y) - 16
+
+			if sy <= dy && (sy+8) > dy {
+				var p Palette
+
+				// palette select
+				if sprite.options.At(4) {
+					p = r.obj1
+				} else {
+					p = r.obj0
+				}
+
+				var rowIndex int
+
+				// y-flip
+				if sprite.options.At(6) {
+					rowIndex = 7 - (dy - sy)
+				} else {
+					rowIndex = dy - sy
+				}
+				row := r.tileset[sprite.tile][rowIndex]
+
+				for x := 0; x < 8; x++ {
+					pos := sx + x
+
+					if pos >= 0 && pos < 160 && (!sprite.options.At(7) || scanline[pos] == White) {
+
+						index := x
+						if sprite.options.At(5) {
+							index = 7 - x
+						}
+
+						colour := p[row[index]]
+						if colour != White {
+							scanline[sx] = colour
+						}
+
+						sx++
+
+					}
+				}
+			}
+		}
+	}
+
+	for dx, colour := range scanline {
+		if colour == nil {
+			colour = White
+		}
+		logger.Printf("drawing %v at (%d,%d)", colour, dx, dy)
+		r.screen.Set(dx, dy, colour)
+	}
+
 }
 
 // Given the emulation state clock, update the render.

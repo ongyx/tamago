@@ -14,10 +14,8 @@ type MMU struct {
 	rom     [0x8000]uint8
 	vram    [0x2000]uint8
 	ram     [0x4000]uint8
-	// oam should only be 160 bytes (9f),
-	// so 0 is returned for any read between 9f and ff.
-	oam  [0x100]uint8
-	hram [0x80]uint8
+	oam     [0xa0]uint8
+	hram    [0x80]uint8
 
 	ir     *Interrupt
 	input  *Input
@@ -82,7 +80,7 @@ func (m *MMU) Read(addr uint16) uint8 {
 		return uint8(rand.Intn(256))
 
 	case addr == 0xff0f:
-		return uint8(m.ir.flags)
+		return m.ir.requested
 
 	case addr == 0xff40:
 		return m.render.lcdc.uint8
@@ -109,7 +107,7 @@ func (m *MMU) Read(addr uint16) uint8 {
 
 	// interrupt enable
 	case addr == 0xffff:
-		return m.ir.enable
+		return m.ir.enabled
 
 	}
 
@@ -133,7 +131,7 @@ func (m *MMU) Write(addr uint16, val uint8) {
 		m.vram[addr-0x8000] = val
 
 		if addr <= 0x97ff {
-			m.render.update(addr)
+			m.render.updateTile(addr - 0x8000)
 		}
 
 	// external + work ram
@@ -147,6 +145,7 @@ func (m *MMU) Write(addr uint16, val uint8) {
 	// oam (sprite ram)
 	case addr <= 0xfe9f:
 		m.oam[addr-0xfe00] = val
+		m.render.updateSprite(addr - 0xfe00)
 
 	// unused
 	case addr <= 0xfeff:
@@ -160,7 +159,7 @@ func (m *MMU) Write(addr uint16, val uint8) {
 		m.input.Select(val)
 
 	case addr == 0xff0f:
-		m.ir.flags = iflag(val)
+		m.ir.requested = val
 
 	case addr == 0xff40:
 		m.render.lcdc.uint8 = val
@@ -173,6 +172,17 @@ func (m *MMU) Write(addr uint16, val uint8) {
 
 	case addr == 0xff44:
 		m.render.line = val
+
+	// Background palette
+	case addr == 0xff47:
+		m.render.updatePalette(&m.render.bg, val)
+
+	// Object palette 1
+	case addr == 0xff48:
+		m.render.updatePalette(&m.render.obj0, val)
+
+	case addr == 0xff49:
+		m.render.updatePalette(&m.render.obj1, val)
 
 	case addr <= 0xff80:
 		// unimplemented i/o
@@ -188,7 +198,7 @@ func (m *MMU) Write(addr uint16, val uint8) {
 
 	// interrupt enable
 	case addr == 0xffff:
-		m.ir.enable = val
+		m.ir.enabled = val
 
 	}
 

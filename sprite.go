@@ -1,7 +1,10 @@
 package tamago
 
-// sprite represents a sprite on the screen.
-type Sprite struct {
-	x, y, tile uint8
-	options    *Bits
-}
+type (
+	// Sprite represents a sprite on the screen.
+	Sprite struct {
+		y, x, tile uint8
+		options    *Bits
+	}
+	SpriteData [40]Sprite
+)
