@@ -163,5 +163,7 @@ func (c *CPU) step() {
 
 	ins.fn(c.State, value)
 	c.clock.Step(ins.cycles)
+
 	c.render.step(c.clock)
+	c.ir.step()
 }

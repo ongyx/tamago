@@ -46,6 +46,36 @@ func NewState() *State {
 	s.fl = NewFlags(s.AF)
 	s.clock = NewClock()
 
+	s.ir.register(VBlank, func() {
+		s.Push(s.PC)
+		s.PC = 0x40
+		s.clock.Step(3)
+	})
+
+	s.ir.register(LCDStat, func() {
+		s.Push(s.PC)
+		s.PC = 0x48
+		s.clock.Step(3)
+	})
+
+	s.ir.register(Timer, func() {
+		s.Push(s.PC)
+		s.PC = 0x50
+		s.clock.Step(3)
+	})
+
+	s.ir.register(Serial, func() {
+		s.Push(s.PC)
+		s.PC = 0x58
+		s.clock.Step(3)
+	})
+
+	s.ir.register(Joypad, func() {
+		s.Push(s.PC)
+		s.PC = 0x60
+		s.clock.Step(3)
+	})
+
 	return s
 }
 

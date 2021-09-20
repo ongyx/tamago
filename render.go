@@ -2,8 +2,6 @@ package tamago
 
 import (
 	"image/color"
-
-	"github.com/hajimehoshi/ebiten/v2"
 )
 
 const (
@@ -29,7 +27,8 @@ type Render struct {
 	spriteData SpriteData
 
 	bg, obj0, obj1 Palette
-	screen         *ebiten.Image
+
+	fb *Framebuffer
 
 	vram []uint8
 	oam  []uint8
@@ -37,13 +36,13 @@ type Render struct {
 
 func NewRender(vram, oam []uint8) *Render {
 	return &Render{
-		lcdc:   &Bits{0},
-		bg:     DefaultPalette,
-		obj0:   DefaultPalette,
-		obj1:   DefaultPalette,
-		screen: ebiten.NewImage(renderWidth, renderHeight),
-		vram:   vram,
-		oam:    oam,
+		lcdc: &Bits{0},
+		bg:   DefaultPalette,
+		obj0: DefaultPalette,
+		obj1: DefaultPalette,
+		fb:   NewFramebuffer(renderWidth, renderHeight),
+		vram: vram,
+		oam:  oam,
 	}
 }
 
@@ -135,14 +134,9 @@ func (r *Render) tile(offset uint16) Tile {
 	return r.tileset[idx]
 }
 
-// Check whether the sprite should be rendered according to its priority,
-// position in the scanline and if the current position is transparent.
-func (r *Render) shouldRender(s *Sprite, pos int, scanline []color.Color) {
-}
-
 // Render the next scanline on screen.
 func (r *Render) scanline() {
-	var scanline [160]color.Color
+	var scanline [160]*color.RGBA
 
 	dy := int(r.line)
 
@@ -156,7 +150,7 @@ func (r *Render) scanline() {
 		x := r.sx % 8
 
 		for dx := range scanline {
-			scanline[dx] = r.bg[tile[y][x]]
+			scanline[dx] = &r.bg[tile[y][x]]
 
 			x++
 			if x == 8 {
@@ -200,7 +194,7 @@ func (r *Render) scanline() {
 				for x := 0; x < 8; x++ {
 					pos := sx + x
 
-					if pos >= 0 && pos < 160 && (!sprite.options.At(7) || scanline[pos] == White) {
+					if pos >= 0 && pos < 160 && (!sprite.options.At(7) || *scanline[pos] == White) {
 
 						index := x
 						if sprite.options.At(5) {
@@ -209,7 +203,7 @@ func (r *Render) scanline() {
 
 						colour := p[row[index]]
 						if colour != White {
-							scanline[sx] = colour
+							scanline[sx] = &colour
 						}
 
 						sx++
@@ -222,10 +216,10 @@ func (r *Render) scanline() {
 
 	for dx, colour := range scanline {
 		if colour == nil {
-			colour = White
+			colour = &White
 		}
 		logger.Printf("drawing %v at (%d,%d)", colour, dx, dy)
-		r.screen.Set(dx, dy, colour)
+		r.fb.Write(dx, dy, colour)
 	}
 
 }

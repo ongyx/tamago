@@ -21,7 +21,7 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.C.step()
-	screen.DrawImage(g.C.render.screen, &ebiten.DrawImageOptions{})
+	g.C.render.fb.CopyInto(screen)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {

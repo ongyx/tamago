@@ -13,4 +13,4 @@ var (
 	DefaultPalette = Palette{White, LightGrey, DarkGrey, Black}
 )
 
-type Palette [4]color.Color
+type Palette [4]color.RGBA
