@@ -1,9 +1,5 @@
 package tamago
 
-import (
-	"fmt"
-)
-
 const (
 	VBlank uint8 = 1 << iota
 	LCDStat
@@ -18,34 +14,25 @@ var priority = [...]uint8{VBlank, LCDStat, Timer, Serial, Joypad}
 type Interrupt struct {
 	master             bool
 	enabled, requested uint8
-	handlers           map[uint8]func()
 }
 
 func NewInterrupt() *Interrupt {
-	return &Interrupt{handlers: make(map[uint8]func())}
+	return &Interrupt{}
 }
 
-func (ir *Interrupt) register(flag uint8, fn func()) {
-	ir.handlers[flag] = fn
-}
-
-func (ir *Interrupt) step() {
+func (ir *Interrupt) todo() uint8 {
 	flags := ir.enabled & ir.requested
 
 	if ir.master && flags > 0 {
 		for _, flag := range priority {
-
-			if fn, ok := ir.handlers[flag]; ok {
-				if (flags & flag) != 0 {
-					ir.requested &^= flag
-					ir.master = false
-					fn()
-				}
-
-			} else {
-				panic(fmt.Sprintf("no handler for flag %d", flag))
+			if (flags & flag) != 0 {
+				ir.requested &^= flag
+				ir.master = false
 			}
-
 		}
+		return flags
+	} else {
+		return 0
 	}
+
 }

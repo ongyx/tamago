@@ -37,7 +37,7 @@ func (fb *Framebuffer) Size() int {
 func (fb *Framebuffer) Write(x, y int, c *color.RGBA) {
 	index := x * y * 4
 
-	if index > fb.Size() {
+	if index > fb.Size() || index < 0 {
 		panic(fmt.Sprintf("index (%d, %d) out of bounds!", x, y))
 	}
 

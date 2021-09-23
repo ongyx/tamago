@@ -1,27 +1,32 @@
 package tamago
 
 import (
+	"errors"
+
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
+var (
+	NoROMErr = errors.New("no (boot)rom loaded")
+)
+
 type Game struct {
-	C *CPU
+	S *State
 }
 
 func NewGame() *Game {
-	return &Game{NewCPU()}
+	return &Game{NewState()}
 }
 
 func (g *Game) Update() error {
-	if !(g.C.hasBoot || g.C.hasROM) {
+	if !(g.S.hasBoot || g.S.hasROM) {
 		return NoROMErr
 	}
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	g.C.step()
-	g.C.render.fb.CopyInto(screen)
+	g.S.step(screen)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {

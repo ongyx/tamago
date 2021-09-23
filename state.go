@@ -3,6 +3,8 @@ package tamago
 import (
 	"fmt"
 	"io"
+
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 const debug = `
@@ -46,38 +48,80 @@ func NewState() *State {
 	s.fl = NewFlags(s.AF)
 	s.clock = NewClock()
 
-	s.ir.register(VBlank, func() {
-		s.Push(s.PC)
-		s.PC = 0x40
-		s.clock.Step(3)
-	})
-
-	s.ir.register(LCDStat, func() {
-		s.Push(s.PC)
-		s.PC = 0x48
-		s.clock.Step(3)
-	})
-
-	s.ir.register(Timer, func() {
-		s.Push(s.PC)
-		s.PC = 0x50
-		s.clock.Step(3)
-	})
-
-	s.ir.register(Serial, func() {
-		s.Push(s.PC)
-		s.PC = 0x58
-		s.clock.Step(3)
-	})
-
-	s.ir.register(Joypad, func() {
-		s.Push(s.PC)
-		s.PC = 0x60
-		s.clock.Step(3)
-	})
-
 	return s
 }
+
+func (s *State) fetch() uint8 {
+	b := s.Read(s.PC)
+	s.PC++
+	return b
+}
+
+func (s *State) step(screen *ebiten.Image) {
+	var ins Instruction
+
+	opcode := s.fetch()
+	if opcode == 0xcb {
+		opcode = s.fetch()
+		ins = cbops[opcode]
+	} else {
+		ins = ops[opcode]
+	}
+
+	buf := make([]uint8, 2)
+	for i := 0; i < ins.length; i++ {
+		buf[i] = s.fetch()
+	}
+	value := NewValue(buf)
+
+	if s.PC == 0x100 {
+		s.hasBoot = false
+	}
+
+	logger.Printf("[0x%x] executing %s", s.PC, ins.Asm(value))
+
+	ins.fn(s, value)
+	s.clock.Step(ins.cycles)
+	s.render.step(s.clock)
+
+	// handle interrupts
+	ir := s.ir.todo()
+	if ir != 0 {
+		s.Push(s.PC)
+
+		var cycles int
+		switch {
+
+		case (ir & VBlank) != 0:
+			s.render.fb.CopyInto(screen)
+			s.PC = 0x40
+			cycles += 3
+
+		case (ir & LCDStat) != 0:
+			s.PC = 0x48
+			cycles += 3
+
+		case (ir & Timer) != 0:
+			s.PC = 0x50
+			cycles += 3
+
+		case (ir & Serial) != 0:
+			s.PC = 0x58
+			cycles += 3
+
+		case (ir & Joypad) != 0:
+			s.PC = 0x60
+			cycles += 3
+
+		}
+
+		s.clock.Step(cycles)
+	}
+}
+
+/*
+	Stack/jump functions
+*/
 
 // Jump the program counter to a relative offset from the current address.
 func (s *State) Jump(offset int8) {
@@ -97,10 +141,6 @@ func (s *State) JumpIf(cond bool, v Value) {
 		s.clock.Step(2)
 	}
 }
-
-/*
-	Stack functions
-*/
 
 // Push a value onto the stack.
 func (s *State) Push(v uint16) {

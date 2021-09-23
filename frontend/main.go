@@ -10,12 +10,10 @@ import (
 )
 
 var (
-	debug        bool
 	rom, bootrom string
 )
 
 func init() {
-	flag.BoolVar(&debug, "debug", false, "enter debug shell")
 	flag.StringVar(&rom, "rom", "", "rom file")
 	flag.StringVar(&bootrom, "bootrom", "", "bootrom file")
 }
@@ -25,18 +23,12 @@ func main() {
 
 	flag.Parse()
 
-	// TODO: integrate debug with game
-	if debug {
-		game.C.DebugRun()
-		return
-	}
-
 	if bootrom != "" {
-		game.C.LoadBoot(bootrom)
+		game.S.LoadBoot(bootrom)
 	}
 
 	if rom != "" {
-		game.C.Load(rom)
+		game.S.Load(rom)
 	}
 
 	ebiten.SetWindowSize(256, 256)

@@ -1379,7 +1379,10 @@ var ops = [256]Instruction{
 		cycles: 1,
 
 		fn: func(s *State, v Value) {
-			// TODO
+			if !s.ir.master {
+				// an interrupt has occured because master was toggled to false
+				s.PC++
+			}
 		},
 	},
 

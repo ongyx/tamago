@@ -298,25 +298,7 @@ func (m *MMU) LoadBoot(rom string) error {
 	return nil
 }
 
-// Dump the contents of the ROM and RAM into seperate files for debugging.
-func (m *MMU) DebugDump() error {
-	contents := []struct {
-		name    string
-		content []uint8
-	}{
-		{"bootrom", m.bootrom[:]},
-		{"rom", m.rom[:]},
-		{"vram", m.vram[:]},
-		{"ram", m.ram[:]},
-		{"oam", m.oam[:]},
-		{"hram", m.hram[:]},
-	}
-
-	for _, c := range contents {
-		if err := os.WriteFile(c.name, c.content, 0644); err != nil {
-			return err
-		}
-	}
-
-	return nil
+// Check if a rom/bootrom has been loaded.
+func (m *MMU) Loaded() bool {
+	return m.hasBoot || m.hasROM
 }
