@@ -9,7 +9,7 @@ import (
 
 var (
 	Endian = binary.LittleEndian
-	logger = log.New(os.Stdout, "", log.Lshortfile)
+	logger = log.New(os.Stdout, "", 0)
 
 	U16 = u16{}
 )

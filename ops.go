@@ -1379,7 +1379,7 @@ var ops = [256]Instruction{
 		cycles: 1,
 
 		fn: func(s *State, v Value) {
-			if !s.ir.master {
+			if !s.render.intr.master {
 				// an interrupt has occured because master was toggled to false
 				s.PC++
 			}
@@ -2196,9 +2196,9 @@ var ops = [256]Instruction{
 		fn: func(s *State, v Value) {
 			if !s.fl.Has(Zero) {
 				s.PC = s.Pop()
-				s.clock.Step(5)
+				s.clock.step(5)
 			} else {
-				s.clock.Step(2)
+				s.clock.step(2)
 			}
 		},
 	},
@@ -2223,9 +2223,9 @@ var ops = [256]Instruction{
 		fn: func(s *State, v Value) {
 			if !s.fl.Has(Zero) {
 				s.PC = v.U16()
-				s.clock.Step(4)
+				s.clock.step(4)
 			} else {
-				s.clock.Step(3)
+				s.clock.step(3)
 			}
 		},
 	},
@@ -2251,9 +2251,9 @@ var ops = [256]Instruction{
 			if !s.fl.Has(Zero) {
 				s.Push(s.PC)
 				s.PC = v.U16()
-				s.clock.Step(6)
+				s.clock.step(6)
 			} else {
-				s.clock.Step(3)
+				s.clock.step(3)
 			}
 		},
 	},
@@ -2301,9 +2301,9 @@ var ops = [256]Instruction{
 		fn: func(s *State, v Value) {
 			if s.fl.Has(Zero) {
 				s.PC = s.Pop()
-				s.clock.Step(5)
+				s.clock.step(5)
 			} else {
-				s.clock.Step(2)
+				s.clock.step(2)
 			}
 		},
 	},
@@ -2328,9 +2328,9 @@ var ops = [256]Instruction{
 		fn: func(s *State, v Value) {
 			if s.fl.Has(Zero) {
 				s.PC = v.U16()
-				s.clock.Step(4)
+				s.clock.step(4)
 			} else {
-				s.clock.Step(3)
+				s.clock.step(3)
 			}
 		},
 	},
@@ -2355,9 +2355,9 @@ var ops = [256]Instruction{
 			if s.fl.Has(Zero) {
 				s.Push(s.PC)
 				s.PC = v.U16()
-				s.clock.Step(6)
+				s.clock.step(6)
 			} else {
-				s.clock.Step(3)
+				s.clock.step(3)
 			}
 		},
 	},
@@ -2406,9 +2406,9 @@ var ops = [256]Instruction{
 		fn: func(s *State, v Value) {
 			if !s.fl.Has(Carry) {
 				s.PC = s.Pop()
-				s.clock.Step(5)
+				s.clock.step(5)
 			} else {
-				s.clock.Step(2)
+				s.clock.step(2)
 			}
 		},
 	},
@@ -2433,9 +2433,9 @@ var ops = [256]Instruction{
 		fn: func(s *State, v Value) {
 			if !s.fl.Has(Carry) {
 				s.PC = v.U16()
-				s.clock.Step(4)
+				s.clock.step(4)
 			} else {
-				s.clock.Step(3)
+				s.clock.step(3)
 			}
 		},
 	},
@@ -2453,9 +2453,9 @@ var ops = [256]Instruction{
 			if !s.fl.Has(Carry) {
 				s.Push(s.PC)
 				s.PC = v.U16()
-				s.clock.Step(6)
+				s.clock.step(6)
 			} else {
-				s.clock.Step(3)
+				s.clock.step(3)
 			}
 		},
 	},
@@ -2503,9 +2503,9 @@ var ops = [256]Instruction{
 		fn: func(s *State, v Value) {
 			if s.fl.Has(Carry) {
 				s.PC = s.Pop()
-				s.clock.Step(5)
+				s.clock.step(5)
 			} else {
-				s.clock.Step(2)
+				s.clock.step(2)
 			}
 		},
 	},
@@ -2517,7 +2517,7 @@ var ops = [256]Instruction{
 		cycles: 4,
 
 		fn: func(s *State, v Value) {
-			s.ir.master = true
+			s.render.intr.master = true
 			s.PC = s.Pop()
 		},
 	},
@@ -2531,9 +2531,9 @@ var ops = [256]Instruction{
 		fn: func(s *State, v Value) {
 			if s.fl.Has(Carry) {
 				s.PC = v.U16()
-				s.clock.Step(4)
+				s.clock.step(4)
 			} else {
-				s.clock.Step(3)
+				s.clock.step(3)
 			}
 		},
 	},
@@ -2551,9 +2551,9 @@ var ops = [256]Instruction{
 			if s.fl.Has(Carry) {
 				s.Push(s.PC)
 				s.PC = v.U16()
-				s.clock.Step(6)
+				s.clock.step(6)
 			} else {
-				s.clock.Step(3)
+				s.clock.step(3)
 			}
 		},
 	},
@@ -2770,7 +2770,7 @@ var ops = [256]Instruction{
 		cycles: 1,
 
 		fn: func(s *State, v Value) {
-			s.ir.master = false
+			s.render.intr.master = false
 		},
 	},
 
@@ -2858,7 +2858,7 @@ var ops = [256]Instruction{
 		cycles: 1,
 
 		fn: func(s *State, v Value) {
-			s.ir.master = false
+			s.render.intr.master = false
 		},
 	},
 

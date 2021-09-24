@@ -62,10 +62,10 @@ func (fl *Flags) ClearAllExcept(f flag) {
 */
 
 func (fl *Flags) setIfZero(v uint8) {
-	if v == 0 {
-		fl.Set(Zero)
-	} else {
+	if v != 0 {
 		fl.Clear(Zero)
+	} else {
+		fl.Set(Zero)
 	}
 }
 

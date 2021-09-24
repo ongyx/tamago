@@ -47,6 +47,22 @@ func (fb *Framebuffer) Write(x, y int, c *color.RGBA) {
 	fb.pixels[index+3] = c.A
 }
 
+// Read the colour at the position (x, y).
+func (fb *Framebuffer) Read(x, y int) *color.RGBA {
+	index := x * y * 4
+
+	if index > fb.Size() || index < 0 {
+		panic(fmt.Sprintf("index (%d, %d) out of bounds!", x, y))
+	}
+
+	return &color.RGBA{
+		R: fb.pixels[index],
+		G: fb.pixels[index+1],
+		B: fb.pixels[index+2],
+		A: fb.pixels[index+3],
+	}
+}
+
 // Copy the contents of the framebuffer into a screen.
 func (fb *Framebuffer) CopyInto(screen *ebiten.Image) {
 	screen.ReplacePixels(fb.pixels)

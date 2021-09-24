@@ -7,7 +7,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-const debug = `
+const (
+	debug = `
 AF: %v
 BC: %v
 DE: %v
@@ -17,6 +18,10 @@ PC: %d
 clock (t cycles): %d
 stopped: %t
 `
+	cps = 4194304
+	fps = 60
+	cpf = cps / fps
+)
 
 // State represents the current state of the emulation at some point in time.
 type State struct {
@@ -28,6 +33,8 @@ type State struct {
 	fl    *Flags
 	clock *Clock
 
+	image *ebiten.Image
+
 	stopped bool
 }
 
@@ -35,29 +42,36 @@ func NewState() *State {
 	s := &State{
 		// The DMG bootrom assigns these values to the registers.
 		// https://gbdev.io/pandocs/Power_Up_Sequence.html#cpu-registers
-		AF: &Register{0x01, 0xb0},
-		BC: &Register{0x00, 0x13},
-		DE: &Register{0x00, 0xd8},
-		HL: &Register{0x01, 0x4d},
-		SP: 0xfffe,
-		PC: 0x100,
+		AF:    &Register{0x01, 0xb0},
+		BC:    &Register{0x00, 0x13},
+		DE:    &Register{0x00, 0xd8},
+		HL:    &Register{0x01, 0x4d},
+		SP:    0xfffe,
+		PC:    0x100,
+		clock: NewClock(),
+		image: ebiten.NewImage(renderWidth, renderHeight),
 	}
 
 	s.MMU = NewMMU()
 
 	s.fl = NewFlags(s.AF)
-	s.clock = NewClock()
 
 	return s
 }
 
-func (s *State) fetch() uint8 {
-	b := s.Read(s.PC)
-	s.PC++
-	return b
+func (s *State) Update(screen *ebiten.Image) {
+	// the number of cycles when a frame is finished.
+	cycles := s.clock.t + cpf
+
+	for s.clock.t < cycles {
+		s.step()
+	}
+
+	logger.Println("copying framebuffer to screen")
+	screen.DrawImage(s.image, &ebiten.DrawImageOptions{})
 }
 
-func (s *State) step(screen *ebiten.Image) {
+func (s *State) step() {
 	var ins Instruction
 
 	opcode := s.fetch()
@@ -78,14 +92,14 @@ func (s *State) step(screen *ebiten.Image) {
 		s.hasBoot = false
 	}
 
-	logger.Printf("[0x%x] executing %s", s.PC, ins.Asm(value))
+	logger.Printf("[0x%04x] %s", s.PC, ins.Asm(value))
 
 	ins.fn(s, value)
-	s.clock.Step(ins.cycles)
+	s.clock.step(ins.cycles)
 	s.render.step(s.clock)
 
 	// handle interrupts
-	ir := s.ir.todo()
+	ir := s.render.intr.todo()
 	if ir != 0 {
 		s.Push(s.PC)
 
@@ -93,7 +107,7 @@ func (s *State) step(screen *ebiten.Image) {
 		switch {
 
 		case (ir & VBlank) != 0:
-			s.render.fb.CopyInto(screen)
+			s.render.fb.CopyInto(s.image)
 			s.PC = 0x40
 			cycles += 3
 
@@ -115,8 +129,14 @@ func (s *State) step(screen *ebiten.Image) {
 
 		}
 
-		s.clock.Step(cycles)
+		s.clock.step(cycles)
 	}
+}
+
+func (s *State) fetch() uint8 {
+	b := s.Read(s.PC)
+	s.PC++
+	return b
 }
 
 /*
@@ -136,9 +156,9 @@ func (s *State) Jump(offset int8) {
 func (s *State) JumpIf(cond bool, v Value) {
 	if cond {
 		s.Jump(v.S8())
-		s.clock.Step(3)
+		s.clock.step(3)
 	} else {
-		s.clock.Step(2)
+		s.clock.step(2)
 	}
 }
 

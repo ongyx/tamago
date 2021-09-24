@@ -17,7 +17,7 @@ type Interrupt struct {
 }
 
 func NewInterrupt() *Interrupt {
-	return &Interrupt{}
+	return &Interrupt{master: true}
 }
 
 func (ir *Interrupt) todo() uint8 {

@@ -9,8 +9,8 @@ func NewClock() *Clock {
 	return &Clock{}
 }
 
-// Step forward the clock by m machine cycles.
-func (c *Clock) Step(m int) {
+// step forward the clock by m machine cycles.
+func (c *Clock) step(m int) {
 	c.t += m * 4
 }
 

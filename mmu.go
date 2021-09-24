@@ -17,7 +17,6 @@ type MMU struct {
 	oam     [0xa0]uint8
 	hram    [0x80]uint8
 
-	ir     *Interrupt
 	input  *Input
 	render *Render
 
@@ -26,7 +25,6 @@ type MMU struct {
 
 func NewMMU() *MMU {
 	m := &MMU{
-		ir:    NewInterrupt(),
 		input: NewInput(),
 	}
 	m.render = NewRender(m.vram[:], m.oam[:])
@@ -35,7 +33,7 @@ func NewMMU() *MMU {
 }
 
 func (m *MMU) Read(addr uint16) uint8 {
-	logger.Printf("reading from addr 0x%x", addr)
+	//logger.Printf("reading from addr 0x%x", addr)
 
 	switch {
 
@@ -80,7 +78,7 @@ func (m *MMU) Read(addr uint16) uint8 {
 		return uint8(rand.Intn(256))
 
 	case addr == 0xff0f:
-		return m.ir.requested
+		return m.render.intr.requested
 
 	case addr == 0xff40:
 		return m.render.lcdc.uint8
@@ -107,7 +105,7 @@ func (m *MMU) Read(addr uint16) uint8 {
 
 	// interrupt enable
 	case addr == 0xffff:
-		return m.ir.enabled
+		return m.render.intr.enabled
 
 	}
 
@@ -116,7 +114,7 @@ func (m *MMU) Read(addr uint16) uint8 {
 }
 
 func (m *MMU) Write(addr uint16, val uint8) {
-	logger.Printf("writing to addr 0x%x", addr)
+	//logger.Printf("writing to addr 0x%x", addr)
 
 	impl := true
 
@@ -159,7 +157,7 @@ func (m *MMU) Write(addr uint16, val uint8) {
 		m.input.Select(val)
 
 	case addr == 0xff0f:
-		m.ir.requested = val
+		m.render.intr.requested = val
 
 	case addr == 0xff40:
 		m.render.lcdc.uint8 = val
@@ -198,7 +196,7 @@ func (m *MMU) Write(addr uint16, val uint8) {
 
 	// interrupt enable
 	case addr == 0xffff:
-		m.ir.enabled = val
+		m.render.intr.enabled = val
 
 	}
 

@@ -30,6 +30,9 @@ type Render struct {
 
 	fb *Framebuffer
 
+	// Put here so interrupts can be requested by the render.
+	intr *Interrupt
+
 	vram []uint8
 	oam  []uint8
 }
@@ -41,6 +44,7 @@ func NewRender(vram, oam []uint8) *Render {
 		obj0: DefaultPalette,
 		obj1: DefaultPalette,
 		fb:   NewFramebuffer(renderWidth, renderHeight),
+		intr: NewInterrupt(),
 		vram: vram,
 		oam:  oam,
 	}
@@ -218,7 +222,6 @@ func (r *Render) scanline() {
 		if colour == nil {
 			colour = &White
 		}
-		logger.Printf("drawing %v at (%d,%d)", colour, dx, dy)
 		r.fb.Write(dx, dy, colour)
 	}
 
@@ -238,6 +241,8 @@ func (r *Render) step(c *Clock) {
 			if r.line == 143 {
 				// last scanline, vblank
 				r.mode = mode.VBlank
+				r.intr.requested |= VBlank
+
 			} else {
 				r.mode = mode.OAM
 			}
