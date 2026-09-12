@@ -62,14 +62,14 @@ const (
 	RRCA
 	RRA
 
-	// Register A arithmetic with 8-bit immediate operand
+	// 8-bit register arithmetic with immediate operand
 
 	ADD_D8
+	ADC_D8
 	SUB_D8
+	SBC_D8
 	AND_D8
 	OR_D8
-	ADC_D8
-	SBC_D8
 	XOR_D8
 	CP_D8
 
@@ -83,16 +83,16 @@ const (
 	LD_A_CP
 	LD_A16_A
 	LD_A_A16
-
-	// 16-bit loads
-
-	LD_R16_D16
 	LD_R16P_A
 	LD_HLPI_A
 	LD_HLPD_A
 	LD_A_R16P
 	LD_A_HLPI
 	LD_A_HLPD
+
+	// 16-bit loads
+
+	LD_R16_D16
 	LD_A16_SP
 	LD_HL_SP_S8
 	LD_SP_HL

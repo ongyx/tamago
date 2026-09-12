@@ -35,7 +35,7 @@ var r16StackOrder = [...]WordRegister{
 // The opcodes of the `<op> A, R8` instructions.
 var opAR8Codes = [...]Opcode{
 	ADD_R8,
-	ADC_D8,
+	ADC_R8,
 	SUB_R8,
 	SBC_R8,
 	AND_R8,
@@ -212,7 +212,7 @@ func DecodeInstruction(op uint8) (ins Instruction, err error) {
 	case 0x1F:
 		ins.Opcode = RRA
 
-	// Register A arithmetic with 8-bit immediate operand
+	// 8-bit register arithmetic with immediate operand
 	case 0xC6, 0xCE, 0xD6, 0xDE, 0xE6, 0xEE, 0xF6, 0xFE:
 		ins.Opcode = opAD8Codes[(op-0xC6)/8]
 
@@ -232,11 +232,6 @@ func DecodeInstruction(op uint8) (ins Instruction, err error) {
 		ins.Opcode = LD_A16_A
 	case 0xFA:
 		ins.Opcode = LD_A_A16
-
-	// 16-bit loads
-	case 0x1, 0x11, 0x21, 0x31:
-		ins.Opcode = LD_R16_D16
-		ins.WordOperand = r16Order[(op-0x1)/16]
 	case 0x2, 0x12:
 		ins.Opcode = LD_R16P_A
 		ins.WordOperand = r16Order[(op-0x2)/16]
@@ -251,6 +246,11 @@ func DecodeInstruction(op uint8) (ins Instruction, err error) {
 		ins.Opcode = LD_A_HLPI
 	case 0x3A:
 		ins.Opcode = LD_A_HLPD
+
+	// 16-bit loads
+	case 0x1, 0x11, 0x21, 0x31:
+		ins.Opcode = LD_R16_D16
+		ins.WordOperand = r16Order[(op-0x1)/16]
 	case 0x8:
 		ins.Opcode = LD_A16_SP
 	case 0xF8:

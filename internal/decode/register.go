@@ -12,7 +12,7 @@ const (
 	RegisterHLP
 )
 
-// An 8-bit wide register.
+// An 8-bit wide (byte) register.
 //
 //go:generate stringer -type=Register
 type Register uint8
