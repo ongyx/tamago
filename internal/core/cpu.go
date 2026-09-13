@@ -2,46 +2,46 @@ package core
 
 import "github.com/ongyx/tamago/internal/decode"
 
-// The main entrypoint for executing Game Boy code.
+// Executes instructions from memory.
 type CPU struct {
 	registers Registers
 	memoryBus MemoryBus
 	alu       ALU
 
-	isHalted   bool
-	cyclesLeft int
+	isHalted bool
+	eiDelay  int
 }
 
 // Creates a new CPU.
 func NewCPU() *CPU {
-	c := &CPU{
-		registers: Registers{},
-		memoryBus: NewMemoryBus(),
-	}
+	c := &CPU{registers: Registers{}}
+	c.memoryBus = NewMemoryBus(&c.registers)
 	c.alu = NewALU(&c.registers)
 
 	return c
 }
 
-// Executes one M-cycle of the CPU.
-func (c *CPU) Tick() error {
-	c.cyclesLeft--
-	if c.cyclesLeft > 0 {
-		// 'Wait' for the previous instruction to finish executing.
-		return nil
-	}
-
+// Executes a fetch-decode-execute cycle, returning the number of M-cycles the instruction takes to finish executing.
+func (c *CPU) Tick() (int, error) {
 	if c.isHalted {
-		return nil
+		return 0, nil
 	}
 
-	ins, err := decode.DecodeInstruction(c.nextByte())
+	ins, err := decode.DecodeInstruction(c.fetchByte())
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	c.cyclesLeft = c.execute(ins)
-	return nil
+	cy := c.execute(ins)
+
+	if c.eiDelay > 0 {
+		c.eiDelay--
+		if c.eiDelay == 0 {
+			c.enableInterrupt()
+		}
+	}
+
+	return cy, err
 }
 
 func (c *CPU) execute(ins decode.Instruction) int {
@@ -56,7 +56,7 @@ func (c *CPU) execute(ins decode.Instruction) int {
 	case decode.NOP:
 		// no-op
 	case decode.PREFIX:
-		pins := decode.DecodePrefixInstruction(c.nextByte())
+		pins := decode.DecodePrefixInstruction(c.fetchByte())
 		return c.executePrefix(pins)
 	case decode.STOP:
 		panic("unimplemented")
@@ -65,9 +65,10 @@ func (c *CPU) execute(ins decode.Instruction) int {
 
 	// Interrupts
 	case decode.DI:
-		panic("unimplemented")
+		c.disableInterrupt()
 	case decode.EI:
-		panic("unimplemented")
+		// Due to a hardware quirk, EI only takes effect after the next instruction.
+		c.eiDelay = 2
 
 	// BCD/Carry
 	case decode.DAA:
@@ -81,7 +82,7 @@ func (c *CPU) execute(ins decode.Instruction) int {
 
 	// Jumps
 	case decode.JR_CC_S8:
-		o := c.nextSignedByte()
+		o := c.fetchSigned()
 		if c.evaluateCondition(ins.Condition) {
 			cycles = 3
 			c.jumpRelative(o)
@@ -89,7 +90,7 @@ func (c *CPU) execute(ins decode.Instruction) int {
 			cycles = 2
 		}
 	case decode.JP_CC_A16:
-		addr := c.nextWord()
+		addr := c.fetchWord()
 		if c.evaluateCondition(ins.Condition) {
 			cycles = 4
 			c.jump(addr)
@@ -102,14 +103,14 @@ func (c *CPU) execute(ins decode.Instruction) int {
 	// Stack manipulation
 	case decode.ADD_SP_S8:
 		cycles = 4
-		o := c.nextSignedByte()
+		o := c.fetchSigned()
 		c.registers.SP = c.alu.AddSP(o)
 	case decode.PUSH_R16:
 		cycles = 4
 		v := c.loadWordRegister(ins.WordOperand)
 		c.push(v)
 	case decode.CALL_CC_A16:
-		addr := c.nextWord()
+		addr := c.fetchWord()
 		if c.evaluateCondition(ins.Condition) {
 			cycles = 6
 			c.call(addr)
@@ -137,7 +138,8 @@ func (c *CPU) execute(ins decode.Instruction) int {
 		}
 	case decode.RETI:
 		cycles = 4
-		panic("unimplemented")
+		c.enableInterrupt()
+		c.ret()
 
 	// 8-bit register arithmetic
 	case decode.INC_R8:
@@ -208,52 +210,57 @@ func (c *CPU) execute(ins decode.Instruction) int {
 	// 8-bit register arithmetic with immediate operand
 	case decode.ADD_D8:
 		cycles = 2
-		v := c.nextByte()
+		v := c.fetchByte()
 		c.alu.Add(v, false)
 	case decode.ADC_D8:
 		cycles = 2
-		v := c.nextByte()
+		v := c.fetchByte()
 		c.alu.Add(v, true)
 	case decode.SUB_D8:
 		cycles = 2
-		v := c.nextByte()
+		v := c.fetchByte()
 		c.alu.Sub(v, false)
 	case decode.SBC_D8:
 		cycles = 2
-		v := c.nextByte()
+		v := c.fetchByte()
 		c.alu.Sub(v, true)
 	case decode.AND_D8:
 		cycles = 2
-		v := c.nextByte()
+		v := c.fetchByte()
 		c.alu.And(v)
 	case decode.XOR_D8:
 		cycles = 2
-		v := c.nextByte()
+		v := c.fetchByte()
 		c.alu.Xor(v)
 	case decode.OR_D8:
 		cycles = 2
-		v := c.nextByte()
+		v := c.fetchByte()
 		c.alu.Or(v)
 	case decode.CP_D8:
 		cycles = 2
-		v := c.nextByte()
+		v := c.fetchByte()
 		c.alu.Cp(v)
 
 	// 8-bit loads
 	case decode.LD_R8_R8:
+		if ins.SrcOperand == ins.DstOperand {
+			// No-op.
+			break
+		}
+
 		v := c.loadRegister(ins.SrcOperand)
 		c.storeRegister(ins.DstOperand, v)
 	case decode.LD_R8_D8:
 		cycles = 2
-		v := c.nextByte()
+		v := c.fetchByte()
 		c.storeRegister(ins.DstOperand, v)
 	case decode.LD_A8_A:
 		cycles = 3
-		addr := 0xFF00 + uint16(c.nextByte())
+		addr := 0xFF00 + uint16(c.fetchByte())
 		c.memoryBus.Write(addr, c.registers.A)
 	case decode.LD_A_A8:
 		cycles = 3
-		addr := 0xFF00 + uint16(c.nextByte())
+		addr := 0xFF00 + uint16(c.fetchByte())
 		c.registers.A = c.memoryBus.Read(addr)
 	case decode.LD_CP_A:
 		cycles = 2
@@ -265,11 +272,11 @@ func (c *CPU) execute(ins decode.Instruction) int {
 		c.registers.A = c.memoryBus.Read(addr)
 	case decode.LD_A16_A:
 		cycles = 4
-		addr := c.nextWord()
+		addr := c.fetchWord()
 		c.memoryBus.Write(addr, c.registers.A)
 	case decode.LD_A_A16:
 		cycles = 4
-		addr := c.nextWord()
+		addr := c.fetchWord()
 		c.registers.A = c.memoryBus.Read(addr)
 	case decode.LD_R16P_A:
 		cycles = 2
@@ -303,15 +310,15 @@ func (c *CPU) execute(ins decode.Instruction) int {
 	// 16-bit loads
 	case decode.LD_R16_D16:
 		cycles = 3
-		v := c.nextWord()
+		v := c.fetchWord()
 		c.storeWordRegister(ins.WordOperand, v)
 	case decode.LD_A16_SP:
 		cycles = 5
-		addr := c.nextWord()
+		addr := c.fetchWord()
 		c.memoryBus.WriteWord(addr, c.registers.SP)
 	case decode.LD_HL_SP_S8:
 		cycles = 3
-		o := c.nextSignedByte()
+		o := c.fetchSigned()
 		c.registers.SetHL(c.alu.AddSP(o))
 	case decode.LD_SP_HL:
 		cycles = 2
@@ -372,21 +379,21 @@ func (c *CPU) executePrefix(pins decode.PrefixInstruction) int {
 	return cycles
 }
 
-func (c *CPU) nextByte() uint8 {
+func (c *CPU) fetchByte() uint8 {
 	v := c.memoryBus.Read(c.registers.PC)
 	c.registers.PC++
 	return v
 }
 
-func (c *CPU) nextSignedByte() int8 {
+func (c *CPU) fetchSigned() int8 {
 	// Interpret the operand as a two's complement binary number.
-	return int8(c.nextByte())
+	return int8(c.fetchByte())
 }
 
-func (c *CPU) nextWord() uint16 {
-	lo := c.nextByte()
-	hi := c.nextByte()
-	return CombineWord(lo, hi)
+func (c *CPU) fetchWord() uint16 {
+	lo := c.fetchByte()
+	hi := c.fetchByte()
+	return CombineWord(hi, lo)
 }
 
 func (c *CPU) evaluateCondition(cc decode.Condition) bool {
@@ -496,7 +503,7 @@ func (c *CPU) jumpRelative(offset int8) {
 }
 
 func (c *CPU) push(v uint16) {
-	lo, hi := SplitWord(v)
+	hi, lo := SplitWord(v)
 	// Stack grows toward a lower address on the Game Boy.
 	c.registers.SP--
 	c.memoryBus.Write(c.registers.SP, hi)
@@ -510,7 +517,7 @@ func (c *CPU) pop() uint16 {
 	hi := c.memoryBus.Read(c.registers.SP)
 	c.registers.SP++
 
-	return CombineWord(lo, hi)
+	return CombineWord(hi, lo)
 }
 
 func (c *CPU) call(addr uint16) {
@@ -521,4 +528,21 @@ func (c *CPU) call(addr uint16) {
 func (c *CPU) ret() {
 	addr := c.pop()
 	c.jump(addr)
+}
+
+func (c *CPU) enableInterrupt() {
+	c.registers.IME = true
+}
+
+func (c *CPU) disableInterrupt() {
+	c.registers.IME = false
+}
+
+func (c *CPU) handleInterrupt() {
+	v := c.registers.CheckInterrupt()
+	if v != InterruptVectorNone {
+		// Continue execution from the interrupt handler.
+		c.isHalted = false
+		c.call(uint16(v))
+	}
 }

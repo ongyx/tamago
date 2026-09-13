@@ -1,59 +1,89 @@
 package core
 
-// Contains the CPU registers used by the Game Boy.
+// Contains the general purpose (A, B, C, D, E, H, L, F, PC, SP) registers and special purpose (IE, IF) registers used by the CPU.
 type Registers struct {
-	A  uint8
-	B  uint8
-	C  uint8
-	D  uint8
-	E  uint8
-	H  uint8
-	L  uint8
-	F  Flags
+	A uint8
+	B uint8
+	C uint8
+	D uint8
+	E uint8
+	H uint8
+	L uint8
+	F ALUFlags
+
+	// Are interrupts master enabled?
+	IME bool
+	// The specific interrupts enabled.
+	IE InterruptFlags
+	// The specific interrupts requested.
+	IR InterruptFlags
+
 	PC uint16
 	SP uint16
 }
 
 // Returns the value of the word register AF.
 func (rs *Registers) AF() uint16 {
-	return (uint16(rs.A) << 8) | uint16(rs.F.Encode())
+	return CombineWord(rs.A, rs.F.Encode())
 }
 
 // Sets the value of the word register AF.
 func (rs *Registers) SetAF(v uint16) {
-	rs.A = uint8(v >> 8)
-	rs.F.Decode(uint8((v & 0xFF)))
+	hi, lo := SplitWord(v)
+	rs.A = hi
+	rs.F.Decode(lo)
 }
 
 // Returns the value of the word register BC.
 func (rs *Registers) BC() uint16 {
-	return (uint16(rs.B) << 8) | uint16(rs.C)
+	return CombineWord(rs.B, rs.C)
 }
 
 // Sets the value of the word register BC.
 func (rs *Registers) SetBC(v uint16) {
-	rs.B = uint8(v >> 8)
-	rs.C = uint8((v & 0xFF))
+	rs.B, rs.C = SplitWord(v)
 }
 
 // Returns the value of the word register DE.
 func (rs *Registers) DE() uint16 {
-	return (uint16(rs.D) << 8) | uint16(rs.E)
+	return CombineWord(rs.D, rs.E)
 }
 
 // Sets the value of the word register DE.
 func (rs *Registers) SetDE(v uint16) {
-	rs.D = uint8(v >> 8)
-	rs.E = uint8((v & 0xFF))
+	rs.D, rs.E = SplitWord(v)
 }
 
 // Returns the value of the word register HL.
 func (rs *Registers) HL() uint16 {
-	return (uint16(rs.H) << 8) | uint16(rs.L)
+	return CombineWord(rs.H, rs.L)
 }
 
 // Sets the value of the word register HL.
 func (rs *Registers) SetHL(v uint16) {
-	rs.H = uint8(v >> 8)
-	rs.L = uint8((v & 0xFF))
+	rs.H, rs.L = SplitWord(v)
+}
+
+// Compares the requested and enabled interrupts, then returns the interrupt vector corresponding to the first interrupt which has been enabled and requested.
+//
+// If no interrupts are enabled and requested, [InterruptVectorNone] is returned.
+func (rs *Registers) CheckInterrupt() InterruptVector {
+	if rs.IE.VBlank && rs.IR.VBlank {
+		rs.IR.VBlank = false
+		return InterruptVectorVBlank
+	} else if rs.IE.LCD && rs.IR.LCD {
+		rs.IR.LCD = false
+		return InterruptVectorLCD
+	} else if rs.IE.Timer && rs.IR.Timer {
+		rs.IR.Timer = false
+		return InterruptVectorTimer
+	} else if rs.IE.Serial && rs.IR.Serial {
+		rs.IR.Serial = false
+		return InterruptVectorSerial
+	} else if rs.IE.Joypad && rs.IR.Joypad {
+		rs.IR.Joypad = false
+		return InterruptVectorSerial
+	}
+
+	return InterruptVectorNone
 }

@@ -1,15 +1,15 @@
 package core
 
 const (
-	bitZero      = 1 << 7
-	bitSubtract  = 1 << 6
-	bitHalfCarry = 1 << 5
-	bitCarry     = 1 << 4
+	aluFlagZero      = 1 << 7
+	aluFlagSubtract  = 1 << 6
+	aluFlagHalfCarry = 1 << 5
+	aluFlagCarry     = 1 << 4
 )
 
-// Represents the flags set by the ALU during arithmetic operations.
+// Contains the flags set by the ALU during arithmetic operations.
 // This is also known as the F register.
-type Flags struct {
+type ALUFlags struct {
 	// Was the result zero?
 	Zero bool
 	// Was the operation a subtraction?
@@ -22,20 +22,20 @@ type Flags struct {
 
 // Encodes the flags to a byte for reading from the F register.
 // The lowest 4 bits are always 0.
-func (f *Flags) Encode() uint8 {
+func (f *ALUFlags) Encode() uint8 {
 	var v uint8
 
 	if f.Zero {
-		v |= bitZero
+		v |= aluFlagZero
 	}
 	if f.Subtract {
-		v |= bitSubtract
+		v |= aluFlagSubtract
 	}
 	if f.HalfCarry {
-		v |= bitHalfCarry
+		v |= aluFlagHalfCarry
 	}
 	if f.Carry {
-		v |= bitCarry
+		v |= aluFlagCarry
 	}
 
 	return v
@@ -43,9 +43,9 @@ func (f *Flags) Encode() uint8 {
 
 // Decodes the flags from a byte for writing to the F register.
 // The lowest 4 bits are always ignored.
-func (f *Flags) Decode(v uint8) {
-	f.Zero = (v & bitZero) != 0
-	f.Subtract = (v & bitSubtract) != 0
-	f.HalfCarry = (v & bitHalfCarry) != 0
-	f.Carry = (v & bitCarry) != 0
+func (f *ALUFlags) Decode(v uint8) {
+	f.Zero = (v & aluFlagZero) != 0
+	f.Subtract = (v & aluFlagSubtract) != 0
+	f.HalfCarry = (v & aluFlagHalfCarry) != 0
+	f.Carry = (v & aluFlagCarry) != 0
 }
