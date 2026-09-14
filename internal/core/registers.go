@@ -64,16 +64,16 @@ func (rs *Registers) SetHL(v uint16) {
 	rs.H, rs.L = SplitWord(v)
 }
 
-// Compares the requested and enabled interrupts, then returns the interrupt vector corresponding to the first interrupt which has been enabled and requested.
+// Checks if there is an enabled and requested interrupt, and returns the corresponding interrupt vector.
 //
 // If no interrupts are enabled and requested, [InterruptVectorNone] is returned.
 func (rs *Registers) CheckInterrupt() InterruptVector {
 	if rs.IE.VBlank && rs.IR.VBlank {
 		rs.IR.VBlank = false
 		return InterruptVectorVBlank
-	} else if rs.IE.LCD && rs.IR.LCD {
-		rs.IR.LCD = false
-		return InterruptVectorLCD
+	} else if rs.IE.Stat && rs.IR.Stat {
+		rs.IR.Stat = false
+		return InterruptVectorStat
 	} else if rs.IE.Timer && rs.IR.Timer {
 		rs.IR.Timer = false
 		return InterruptVectorTimer
@@ -82,7 +82,7 @@ func (rs *Registers) CheckInterrupt() InterruptVector {
 		return InterruptVectorSerial
 	} else if rs.IE.Joypad && rs.IR.Joypad {
 		rs.IR.Joypad = false
-		return InterruptVectorSerial
+		return InterruptVectorJoypad
 	}
 
 	return InterruptVectorNone

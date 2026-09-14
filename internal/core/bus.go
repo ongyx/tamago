@@ -1,0 +1,80 @@
+package core
+
+const (
+	romEnd uint16 = 0x8000
+)
+
+// Handles memory address reads/writes.
+type Bus struct {
+	registers *Registers
+	rom       *Cart
+	ram       [0x6000]uint8
+}
+
+// Creates a new bus.
+func NewBus(rs *Registers) Bus {
+	return Bus{
+		registers: rs,
+	}
+}
+
+// Loads a cartridge into the bus as read-only memory.
+func (b *Bus) LoadCart(c *Cart) {
+	b.rom = c
+}
+
+// Ejects the cartridge from the bus, if any.
+func (b *Bus) EjectCart() {
+	b.rom = nil
+}
+
+// Reads a byte from memory.
+func (b *Bus) Read(addr uint16) uint8 {
+	if addr < romEnd {
+		if b.rom != nil {
+			return b.rom.Data[addr]
+		} else {
+			return 0x0
+		}
+	}
+
+	switch addr {
+	case 0xFF0F:
+		return b.registers.IR.Encode()
+	case 0xFFFF:
+		return b.registers.IE.Encode()
+	}
+
+	return b.ram[addr]
+}
+
+// Reads a word from memory.
+func (b *Bus) ReadWord(addr uint16) uint16 {
+	lo := b.Read(addr)
+	hi := b.Read(addr + 1)
+	return CombineWord(hi, lo)
+}
+
+// Writes a byte to memory.
+func (b *Bus) Write(addr uint16, value uint8) {
+	if addr < romEnd {
+		// ROM is not writable.
+		return
+	}
+
+	switch addr {
+	case 0xFF0F:
+		b.registers.IR.Decode(value)
+	case 0xFFFF:
+		b.registers.IE.Decode(value)
+	}
+
+	b.ram[addr] = value
+}
+
+// Writes a word to memory.
+func (b *Bus) WriteWord(addr uint16, value uint16) {
+	hi, lo := SplitWord(value)
+	b.Write(addr, lo)
+	b.Write(addr+1, hi)
+}

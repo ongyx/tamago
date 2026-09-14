@@ -4,35 +4,74 @@ import "github.com/ongyx/tamago/internal/decode"
 
 // Executes instructions from memory.
 type CPU struct {
-	registers Registers
-	memoryBus MemoryBus
+	registers *Registers
+	bus       Bus
 	alu       ALU
 
 	isHalted bool
 	eiDelay  int
 }
 
-// Creates a new CPU.
+// Creates a new CPU, with register values initialized to their state after the boot ROM finishes.
 func NewCPU() *CPU {
-	c := &CPU{registers: Registers{}}
-	c.memoryBus = NewMemoryBus(&c.registers)
-	c.alu = NewALU(&c.registers)
+	// re https://aquova.net/emudev/gb/11-final-misc.html
+	var f ALUFlags
+	f.Decode(0xB0)
+	rs := &Registers{
+		A: 0x1,
+		B: 0x0,
+		C: 0x13,
+		D: 0x00,
+		E: 0xD8,
+		// Equivalent to 0xB0
+		F: f,
+		H: 0x1,
+		L: 0x4D,
+	}
 
-	return c
+	b := NewBus(rs)
+	b.Write(0xFF10, 0x80)
+	b.Write(0xFF11, 0xBF)
+	b.Write(0xFF12, 0xF3)
+	b.Write(0xFF14, 0xBF)
+	b.Write(0xFF16, 0x3F)
+	b.Write(0xFF19, 0xBF)
+	b.Write(0xFF1A, 0x7F)
+	b.Write(0xFF1B, 0xFF)
+	b.Write(0xFF1C, 0x9F)
+	b.Write(0xFF1E, 0xBF)
+	b.Write(0xFF20, 0xFF)
+	b.Write(0xFF23, 0xBF)
+	b.Write(0xFF24, 0x77)
+	b.Write(0xFF25, 0xF3)
+	b.Write(0xFF26, 0xF1)
+	b.Write(0xFF40, 0x91)
+	b.Write(0xFF47, 0xFC)
+	b.Write(0xFF48, 0xFF)
+	b.Write(0xFF49, 0xFF)
+
+	alu := NewALU(rs)
+
+	return &CPU{
+		registers: rs,
+		bus:       b,
+		alu:       alu,
+	}
 }
 
 // Executes a fetch-decode-execute cycle, returning the number of M-cycles the instruction takes to finish executing.
-func (c *CPU) Tick() (int, error) {
+func (c *CPU) Tick() (cycles int, err error) {
 	if c.isHalted {
-		return 0, nil
-	}
+		// Do nothing.
+		cycles = 1
+	} else {
+		ins, err := decode.DecodeInstruction(c.fetchByte())
+		if err != nil {
+			return 0, err
+		}
 
-	ins, err := decode.DecodeInstruction(c.fetchByte())
-	if err != nil {
-		return 0, err
+		cycles = c.execute(ins)
 	}
-
-	cy := c.execute(ins)
 
 	if c.eiDelay > 0 {
 		c.eiDelay--
@@ -41,7 +80,9 @@ func (c *CPU) Tick() (int, error) {
 		}
 	}
 
-	return cy, err
+	c.handleInterrupt()
+
+	return cycles, err
 }
 
 func (c *CPU) execute(ins decode.Instruction) int {
@@ -257,54 +298,54 @@ func (c *CPU) execute(ins decode.Instruction) int {
 	case decode.LD_A8_A:
 		cycles = 3
 		addr := 0xFF00 + uint16(c.fetchByte())
-		c.memoryBus.Write(addr, c.registers.A)
+		c.bus.Write(addr, c.registers.A)
 	case decode.LD_A_A8:
 		cycles = 3
 		addr := 0xFF00 + uint16(c.fetchByte())
-		c.registers.A = c.memoryBus.Read(addr)
+		c.registers.A = c.bus.Read(addr)
 	case decode.LD_CP_A:
 		cycles = 2
 		addr := 0xFF00 + uint16(c.registers.C)
-		c.memoryBus.Write(addr, c.registers.A)
+		c.bus.Write(addr, c.registers.A)
 	case decode.LD_A_CP:
 		cycles = 2
 		addr := 0xFF00 + uint16(c.registers.C)
-		c.registers.A = c.memoryBus.Read(addr)
+		c.registers.A = c.bus.Read(addr)
 	case decode.LD_A16_A:
 		cycles = 4
 		addr := c.fetchWord()
-		c.memoryBus.Write(addr, c.registers.A)
+		c.bus.Write(addr, c.registers.A)
 	case decode.LD_A_A16:
 		cycles = 4
 		addr := c.fetchWord()
-		c.registers.A = c.memoryBus.Read(addr)
+		c.registers.A = c.bus.Read(addr)
 	case decode.LD_R16P_A:
 		cycles = 2
 		addr := c.loadWordRegister(ins.WordOperand)
-		c.memoryBus.Write(addr, c.registers.A)
+		c.bus.Write(addr, c.registers.A)
 	case decode.LD_HLPI_A:
 		cycles = 2
 		hl := c.registers.HL()
-		c.memoryBus.Write(hl, c.registers.A)
+		c.bus.Write(hl, c.registers.A)
 		c.registers.SetHL(hl + 1)
 	case decode.LD_HLPD_A:
 		cycles = 2
 		hl := c.registers.HL()
-		c.memoryBus.Write(hl, c.registers.A)
+		c.bus.Write(hl, c.registers.A)
 		c.registers.SetHL(hl - 1)
 	case decode.LD_A_R16P:
 		cycles = 2
 		addr := c.loadWordRegister(ins.WordOperand)
-		c.registers.A = c.memoryBus.Read(addr)
+		c.registers.A = c.bus.Read(addr)
 	case decode.LD_A_HLPI:
 		cycles = 2
 		hl := c.registers.HL()
-		c.registers.A = c.memoryBus.Read(hl)
+		c.registers.A = c.bus.Read(hl)
 		c.registers.SetHL(hl + 1)
 	case decode.LD_A_HLPD:
 		cycles = 2
 		hl := c.registers.HL()
-		c.registers.A = c.memoryBus.Read(hl)
+		c.registers.A = c.bus.Read(hl)
 		c.registers.SetHL(hl - 1)
 
 	// 16-bit loads
@@ -315,7 +356,7 @@ func (c *CPU) execute(ins decode.Instruction) int {
 	case decode.LD_A16_SP:
 		cycles = 5
 		addr := c.fetchWord()
-		c.memoryBus.WriteWord(addr, c.registers.SP)
+		c.bus.WriteWord(addr, c.registers.SP)
 	case decode.LD_HL_SP_S8:
 		cycles = 3
 		o := c.fetchSigned()
@@ -380,7 +421,7 @@ func (c *CPU) executePrefix(pins decode.PrefixInstruction) int {
 }
 
 func (c *CPU) fetchByte() uint8 {
-	v := c.memoryBus.Read(c.registers.PC)
+	v := c.bus.Read(c.registers.PC)
 	c.registers.PC++
 	return v
 }
@@ -430,7 +471,7 @@ func (c *CPU) loadRegister(r decode.Register) uint8 {
 	case decode.RegisterL:
 		return c.registers.L
 	case decode.RegisterHLP:
-		return c.memoryBus.Read(c.registers.HL())
+		return c.bus.Read(c.registers.HL())
 	default:
 		panic("register is invalid: " + r.String())
 	}
@@ -453,7 +494,7 @@ func (c *CPU) storeRegister(r decode.Register, v uint8) {
 	case decode.RegisterL:
 		c.registers.L = v
 	case decode.RegisterHLP:
-		c.memoryBus.Write(c.registers.HL(), v)
+		c.bus.Write(c.registers.HL(), v)
 	default:
 		panic("register is invalid: " + r.String())
 	}
@@ -506,15 +547,15 @@ func (c *CPU) push(v uint16) {
 	hi, lo := SplitWord(v)
 	// Stack grows toward a lower address on the Game Boy.
 	c.registers.SP--
-	c.memoryBus.Write(c.registers.SP, hi)
+	c.bus.Write(c.registers.SP, hi)
 	c.registers.SP--
-	c.memoryBus.Write(c.registers.SP, lo)
+	c.bus.Write(c.registers.SP, lo)
 }
 
 func (c *CPU) pop() uint16 {
-	lo := c.memoryBus.Read(c.registers.SP)
+	lo := c.bus.Read(c.registers.SP)
 	c.registers.SP++
-	hi := c.memoryBus.Read(c.registers.SP)
+	hi := c.bus.Read(c.registers.SP)
 	c.registers.SP++
 
 	return CombineWord(hi, lo)
@@ -539,10 +580,15 @@ func (c *CPU) disableInterrupt() {
 }
 
 func (c *CPU) handleInterrupt() {
-	v := c.registers.CheckInterrupt()
-	if v != InterruptVectorNone {
-		// Continue execution from the interrupt handler.
+	iv := c.registers.CheckInterrupt()
+	if iv != InterruptVectorNone {
+		// Interrupts wake up the CPU from halt, even if IME is false.
 		c.isHalted = false
-		c.call(uint16(v))
+
+		if c.registers.IME {
+			c.disableInterrupt()
+			// Continue execution from the interrupt handler.
+			c.call(uint16(iv))
+		}
 	}
 }

@@ -1,10 +1,11 @@
 package core
 
 const (
+	// No interrupt is pending.
 	InterruptVectorNone InterruptVector = 0x00
 
 	InterruptVectorVBlank InterruptVector = 0x40 + (iota * 0x8)
-	InterruptVectorLCD
+	InterruptVectorStat
 	InterruptVectorTimer
 	InterruptVectorSerial
 	InterruptVectorJoypad

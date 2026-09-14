@@ -1,5 +1,12 @@
 package core
 
+const (
+	// The width of the emulated screen.
+	ScreenWidth = 160
+	// The height of the emulated screen.
+	ScreenHeight = 144
+)
+
 // Splits a word into two bytes.
 func SplitWord(v uint16) (hi, lo uint8) {
 	return uint8(v >> 8), uint8(v & 0xFF)

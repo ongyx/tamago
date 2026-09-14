@@ -2,7 +2,7 @@ package core
 
 const (
 	interruptFlagVBlank = 1 << iota
-	interruptFlagLCD
+	interruptFlagStat
 	interruptFlagTimer
 	interruptFlagSerial
 	interruptFlagJoypad
@@ -11,7 +11,7 @@ const (
 // Contains the flags set by the CPU regarding interrupts.
 type InterruptFlags struct {
 	VBlank bool
-	LCD    bool
+	Stat   bool
 	Timer  bool
 	Serial bool
 	Joypad bool
@@ -25,8 +25,8 @@ func (f *InterruptFlags) Encode() uint8 {
 	if f.VBlank {
 		v |= interruptFlagVBlank
 	}
-	if f.LCD {
-		v |= interruptFlagLCD
+	if f.Stat {
+		v |= interruptFlagStat
 	}
 	if f.Timer {
 		v |= interruptFlagTimer
@@ -45,7 +45,7 @@ func (f *InterruptFlags) Encode() uint8 {
 // The highest 3 bits are always ignored.
 func (f *InterruptFlags) Decode(v uint8) {
 	f.VBlank = (v & interruptFlagVBlank) != 0
-	f.LCD = (v & interruptFlagLCD) != 0
+	f.Stat = (v & interruptFlagStat) != 0
 	f.Timer = (v & interruptFlagTimer) != 0
 	f.Serial = (v & interruptFlagSerial) != 0
 	f.Joypad = (v & interruptFlagJoypad) != 0

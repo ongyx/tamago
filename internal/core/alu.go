@@ -11,8 +11,8 @@ type ALU struct {
 }
 
 // Creates a new ALU.
-func NewALU(registers *Registers) ALU {
-	return ALU{registers}
+func NewALU(rs *Registers) ALU {
+	return ALU{rs}
 }
 
 // Increments the byte value.

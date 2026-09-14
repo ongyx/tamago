@@ -10,7 +10,7 @@ func _() {
 	var x [1]struct{}
 	_ = x[InterruptVectorNone-0]
 	_ = x[InterruptVectorVBlank-72]
-	_ = x[InterruptVectorLCD-80]
+	_ = x[InterruptVectorStat-80]
 	_ = x[InterruptVectorTimer-88]
 	_ = x[InterruptVectorSerial-96]
 	_ = x[InterruptVectorJoypad-104]
@@ -19,7 +19,7 @@ func _() {
 const (
 	_InterruptVector_name_0 = "InterruptVectorNone"
 	_InterruptVector_name_1 = "InterruptVectorVBlank"
-	_InterruptVector_name_2 = "InterruptVectorLCD"
+	_InterruptVector_name_2 = "InterruptVectorStat"
 	_InterruptVector_name_3 = "InterruptVectorTimer"
 	_InterruptVector_name_4 = "InterruptVectorSerial"
 	_InterruptVector_name_5 = "InterruptVectorJoypad"
