@@ -1,6 +1,17 @@
 package core
 
-import "github.com/ongyx/tamago/internal/decode"
+import (
+	"github.com/ongyx/tamago/internal/decode"
+	. "github.com/ongyx/tamago/internal/util"
+)
+
+// The result of a CPU tick.
+type CPUTickResult struct {
+	// The number of M-cycles taken for this tick.
+	Cycles uint8
+	// Should the screen be rendered?
+	Render bool
+}
 
 // Executes instructions from memory.
 type CPU struct {
@@ -60,17 +71,32 @@ func NewCPU() *CPU {
 }
 
 // Executes a fetch-decode-execute cycle, returning the number of M-cycles the instruction takes to finish executing.
-func (c *CPU) Tick() (cycles int, err error) {
+func (c *CPU) Tick() (result CPUTickResult, err error) {
 	if c.isHalted {
 		// Do nothing.
-		cycles = 1
+		result.Cycles = 1
 	} else {
-		ins, err := decode.DecodeInstruction(c.fetchByte())
+		// Fetch, decode, then execute.
+		op := c.fetchByte()
+		ins, err := decode.DecodeInstruction(op)
 		if err != nil {
-			return 0, err
+			return CPUTickResult{}, err
 		}
+		result.Cycles = c.execute(ins)
+	}
 
-		cycles = c.execute(ins)
+	// Update PPU state.
+	pr := c.bus.ppu.Tick(result.Cycles)
+
+	if pr.DoInterrupt {
+		// Request STAT interrupt.
+		c.registers.IR.Stat = true
+	}
+
+	if pr.DoRender {
+		// Request VBlank interrupt.
+		c.registers.IR.VBlank = true
+		result.Render = true
 	}
 
 	if c.eiDelay > 0 {
@@ -82,11 +108,11 @@ func (c *CPU) Tick() (cycles int, err error) {
 
 	c.handleInterrupt()
 
-	return cycles, err
+	return result, nil
 }
 
-func (c *CPU) execute(ins decode.Instruction) int {
-	cycles := 1
+func (c *CPU) execute(ins decode.Instruction) (cycles uint8) {
+	cycles = 1
 	// Generally, instructions involving a load/store with (HL) require 2 cycles to execute.
 	if ins.SrcOperand == decode.RegisterHLP || ins.DstOperand == decode.RegisterHLP {
 		cycles = 2
@@ -372,11 +398,11 @@ func (c *CPU) execute(ins decode.Instruction) int {
 	return cycles
 }
 
-func (c *CPU) executePrefix(pins decode.PrefixInstruction) int {
+func (c *CPU) executePrefix(pins decode.PrefixInstruction) (cycles uint8) {
 	v := c.loadRegister(pins.Operand)
 
 	// All prefixed instructions take 2 cycles to execute, except for those interacting with (HL).
-	cycles := 2
+	cycles = 2
 	if pins.Operand == decode.RegisterHLP {
 		if pins.Opcode == decode.BIT {
 			// BIT doesn't write back to (HL) so it takes only 3 cycles.

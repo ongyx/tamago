@@ -1,12 +1,21 @@
 package core
 
+import (
+	"github.com/ongyx/tamago/internal/ppu"
+	. "github.com/ongyx/tamago/internal/util"
+)
+
 const (
-	romEnd uint16 = 0x8000
+	// The start address of ROM.
+	ROMStart uint16 = 0x0000
+	// The end address of ROM.
+	ROMEnd uint16 = 0x8000
 )
 
 // Handles memory address reads/writes.
 type Bus struct {
 	registers *Registers
+	ppu       ppu.PPU
 	rom       *Cart
 	ram       [0x6000]uint8
 }
@@ -15,6 +24,7 @@ type Bus struct {
 func NewBus(rs *Registers) Bus {
 	return Bus{
 		registers: rs,
+		ppu:       ppu.New(),
 	}
 }
 
@@ -30,22 +40,24 @@ func (b *Bus) EjectCart() {
 
 // Reads a byte from memory.
 func (b *Bus) Read(addr uint16) uint8 {
-	if addr < romEnd {
+	switch {
+	case addr >= ROMStart && addr < ROMEnd:
 		if b.rom != nil {
 			return b.rom.Data[addr]
 		} else {
 			return 0x0
 		}
-	}
-
-	switch addr {
-	case 0xFF0F:
+	case addr >= ppu.VRAMStart && addr < ppu.VRAMEnd:
+		return b.ppu.ReadVRAM(addr)
+	case addr >= ppu.RegisterStart && addr < ppu.RegisterEnd:
+		return b.ppu.Registers.Read(addr)
+	case addr == 0xFF0F:
 		return b.registers.IR.Encode()
-	case 0xFFFF:
+	case addr == 0xFFFF:
 		return b.registers.IE.Encode()
+	default:
+		return b.ram[addr]
 	}
-
-	return b.ram[addr]
 }
 
 // Reads a word from memory.
@@ -57,19 +69,21 @@ func (b *Bus) ReadWord(addr uint16) uint16 {
 
 // Writes a byte to memory.
 func (b *Bus) Write(addr uint16, value uint8) {
-	if addr < romEnd {
+	switch {
+	case addr >= ROMStart && addr < ROMEnd:
 		// ROM is not writable.
 		return
-	}
-
-	switch addr {
-	case 0xFF0F:
+	case addr >= ppu.VRAMStart && addr < ppu.VRAMEnd:
+		b.ppu.WriteVRAM(addr, value)
+	case addr >= ppu.RegisterStart && addr < ppu.RegisterEnd:
+		b.ppu.Registers.Write(addr, value)
+	case addr == 0xFF0F:
 		b.registers.IR.Decode(value)
-	case 0xFFFF:
+	case addr == 0xFFFF:
 		b.registers.IE.Decode(value)
+	default:
+		b.ram[addr] = value
 	}
-
-	b.ram[addr] = value
 }
 
 // Writes a word to memory.
