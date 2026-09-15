@@ -94,7 +94,7 @@ func (p *PPU) Render(buffer []uint8) {
 
 func (p *PPU) renderBackground(buffer []uint8) {
 	offset := int(p.Registers.LCDC.BackgroundTileMap()) * tileMapTableSize
-	colors := p.Registers.BackgroundPalette()
+	indexes := p.Registers.BackgroundPalette()
 
 	for ty := range tileRows {
 		for tx := range tileColumns {
@@ -120,7 +120,7 @@ func (p *PPU) renderBackground(buffer []uint8) {
 				for x := range 8 {
 					px := 8*tx + x
 					cell := row[x]
-					color := DefaultColorPalette[colors[cell]]
+					color := DefaultColorPalette[indexes[cell]]
 
 					bi := 4 * (py*ScreenWidth + px)
 					for i := range 4 {

@@ -2,8 +2,10 @@ package ppu
 
 import (
 	"image"
+)
 
-	"github.com/hajimehoshi/ebiten/v2"
+const (
+	debugTileCountPerRow = 16
 )
 
 // Provides debug functions for a PPU.
@@ -16,21 +18,24 @@ func NewDebugger(ppu *PPU) *Debugger {
 	return &Debugger{ppu: ppu}
 }
 
-// Dumps the tiles to an image with the background palette.
-func (d *Debugger) DumpTiles() *ebiten.Image {
+// Dumps the tiles to an NRGBA image with the background palette.
+func (d *Debugger) DumpTiles() *image.NRGBA {
 	// 16 tiles by 24 tiles in size.
-	img := ebiten.NewImage(16*TileWidthHeight, (tileCount/16)*TileWidthHeight)
-
-	var buf []uint8
+	bounds := image.Rectangle{
+		Max: image.Point{
+			X: debugTileCountPerRow * TileWidthHeight.X,
+			Y: (tileCount / debugTileCountPerRow) * TileWidthHeight.Y,
+		},
+	}
+	img := image.NewNRGBA(bounds)
 
 	for idx, tile := range d.ppu.tiles {
-		dx := TileWidthHeight * (idx % 16)
-		dy := TileWidthHeight * (idx / 16)
+		px := TileWidthHeight.X * (idx % debugTileCountPerRow)
+		py := TileWidthHeight.Y * (idx / debugTileCountPerRow)
 
-		buf = tile.Dump(d.ppu.Registers.BGP, buf)
-
-		sub := img.SubImage(image.Rect(dx, dy, dx+8, dy+8)).(*ebiten.Image)
-		sub.WritePixels(buf)
+		// Dump directly into the image.
+		sub := img.SubImage(image.Rect(px, py, px+8, py+8)).(*image.NRGBA)
+		tile.Dump(d.ppu.Registers.BGP, sub)
 	}
 
 	return img

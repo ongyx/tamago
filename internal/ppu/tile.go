@@ -1,7 +1,7 @@
 package ppu
 
 import (
-	"fmt"
+	"image"
 
 	. "github.com/ongyx/tamago/internal/util"
 )
@@ -9,11 +9,11 @@ import (
 const (
 	// The maximum offset for reading from/writing to a tile, since each tile takes up 16 bytes in memory.
 	MaxTileOffset = 16
+)
 
+var (
 	// The width and height of a tile.
-	TileWidthHeight = 8
-	// The buffer size required for a tile in RGBA format.
-	TileBufferSize = TileWidthHeight * TileWidthHeight * 4
+	TileWidthHeight = image.Point{8, 8}
 )
 
 // A tile 8x8 pixels in size.
@@ -62,29 +62,26 @@ func (t *Tile) Write(off uint16, value uint8) {
 	}
 }
 
-// Dumps the tiles as an 8x8 image into the buffer in RGBA format, given the color palette.
+// Dumps the tiles as an 8x8 image with a palette.
 //
-// If the buffer is nil, a suitably sized one is created.
-// If the buffer is too small, a panic occurs.
-func (t *Tile) Dump(palette Palette, buffer []uint8) []uint8 {
-	if buffer == nil {
-		buffer = make([]uint8, TileBufferSize)
-	} else if len(buffer) < TileBufferSize {
-		panic(fmt.Sprintf("buffer length must be at least %d", TileBufferSize))
+// If the image is too small, a panic occurs.
+func (t *Tile) Dump(palette Palette, img *image.NRGBA) {
+	if img.Bounds().Size() != TileWidthHeight {
+		panic("image must be 8x8 pixels in size")
 	}
 
 	colors := palette.Unpack()
 
 	for y, r := range t {
 		for x, c := range r {
-			color := DefaultColorPalette[colors[c]]
+			// PixOffset assumes x and y are absolute coordinates, so both coordinates must be adjusted to be relative to Rect.Min for sub-images.
+			pt := img.Rect.Min.Add(image.Pt(x, y))
+			idx := img.PixOffset(pt.X, pt.Y)
 
-			idx := 4 * (TileWidthHeight*y + x)
+			color := DefaultColorPalette[colors[c]]
 			for o := range 4 {
-				buffer[idx+o] = color[o]
+				img.Pix[idx+o] = color[o]
 			}
 		}
 	}
-
-	return buffer
 }
