@@ -12,4 +12,6 @@ const (
 )
 
 // A PPU mode.
+//
+//go:generate stringer -type=Mode
 type Mode uint8

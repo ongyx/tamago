@@ -34,6 +34,9 @@ func (c Control) IsWindowLayerEnabled() bool {
 }
 
 // Which tile set is being used for the background and window layer?
+//
+// The first tile set resides at 0x8000-0x8FFF, while the second tile set resides at 0x8800-0x97FF.
+// 0 selects the second, and 1 selects the first.
 func (c Control) BackgroundWindowTileSet() uint8 {
 	return GetBit(uint8(c), lcdcBackgroundWindowTileSet)
 }

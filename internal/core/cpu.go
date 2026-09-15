@@ -1,6 +1,8 @@
 package core
 
 import (
+	"fmt"
+
 	"github.com/ongyx/tamago/internal/decode"
 	. "github.com/ongyx/tamago/internal/util"
 )
@@ -35,9 +37,11 @@ func NewCPU() *CPU {
 		D: 0x00,
 		E: 0xD8,
 		// Equivalent to 0xB0
-		F: f,
-		H: 0x1,
-		L: 0x4D,
+		F:  f,
+		H:  0x1,
+		L:  0x4D,
+		PC: 0x0100,
+		SP: 0xFFFE,
 	}
 
 	b := NewBus(rs)
@@ -86,14 +90,14 @@ func (c *CPU) Tick() (result CPUTickResult, err error) {
 	}
 
 	// Update PPU state.
-	pr := c.bus.ppu.Tick(result.Cycles)
+	pr := c.bus.PPU.Tick(result.Cycles)
 
-	if pr.DoInterrupt {
+	if pr.Interrupt {
 		// Request STAT interrupt.
 		c.registers.IR.Stat = true
 	}
 
-	if pr.DoRender {
+	if pr.Render {
 		// Request VBlank interrupt.
 		c.registers.IR.VBlank = true
 		result.Render = true
@@ -109,6 +113,26 @@ func (c *CPU) Tick() (result CPUTickResult, err error) {
 	c.handleInterrupt()
 
 	return result, nil
+}
+
+// Renders the screen to a buffer of at least [util.DisplayBuffer] length.
+//
+// If the buffer is nil, a suitably sized one is allocated and returned.
+// If the buffer is too small, a panic occurs.
+func (c *CPU) Render(buffer []uint8) []uint8 {
+	if buffer == nil {
+		buffer = make([]uint8, DisplayBuffer)
+	} else if len(buffer) < DisplayBuffer {
+		panic(fmt.Sprintf("buffer length must be at least %d", DisplayBuffer))
+	}
+
+	c.bus.PPU.Render(buffer)
+	return buffer
+}
+
+// Loads a cartridge into memory.
+func (c *CPU) LoadCart(cart *Cart) {
+	c.bus.Cart = cart
 }
 
 func (c *CPU) execute(ins decode.Instruction) (cycles uint8) {

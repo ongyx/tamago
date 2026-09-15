@@ -1,5 +1,9 @@
 package ppu
 
+import (
+	. "github.com/ongyx/tamago/internal/util"
+)
+
 const (
 	// The start address of VRAM.
 	VRAMStart = 0x8000
@@ -11,17 +15,22 @@ const (
 	tileMapStart = 0x9800
 	tileMapEnd   = 0xA000
 
-	tileSize    = 16
-	tileCount   = 384
-	tileMapSize = tileMapEnd - tileMapStart
+	tileByteSize     = 16
+	tileCount        = 384
+	tileMapSize      = tileMapEnd - tileMapStart
+	tileMapTableSize = tileMapSize / 2
+
+	tileRows    = ScreenHeight / 8
+	tileColumns = ScreenWidth / 8
+	layerWidth  = 32
 )
 
 // The result of the PPU ticking.
 type PPUTickResult struct {
 	// Should the screen be rendered?
-	DoRender bool
+	Render bool
 	// Should an interrupt occur?
-	DoInterrupt bool
+	Interrupt bool
 }
 
 // Holds tile data and processes reads and writes to VRAM.
@@ -73,15 +82,62 @@ func (p *PPU) Tick(cycles uint8) PPUTickResult {
 
 	p.Registers.STAT.SetMode(m)
 
-	return PPUTickResult{DoRender: rdr, DoInterrupt: irq}
+	return PPUTickResult{Render: rdr, Interrupt: irq}
+}
+
+// Renders the screen to the buffer of at least [util.DisplayBuffer] length.
+func (p *PPU) Render(buffer []uint8) {
+	if p.Registers.LCDC.IsBackgroundLayerEnabled() {
+		p.renderBackground(buffer)
+	}
+}
+
+func (p *PPU) renderBackground(buffer []uint8) {
+	offset := int(p.Registers.LCDC.BackgroundTileMap()) * tileMapTableSize
+	colors := p.Registers.BackgroundPalette()
+
+	for ty := range tileRows {
+		for tx := range tileColumns {
+			// Fetch the map, then the tile index in the map, then the tile.
+			mn := ty*layerWidth + tx
+			ti := p.maps[offset+mn]
+
+			var ati int
+			if p.Registers.LCDC.BackgroundWindowTileSet() == 0 {
+				// The tile index must be interpreted as a signed 8-bit offset to reach the last 128 tiles.
+				ati = 256 + int(int8(ti))
+			} else {
+				// The tile index is below 256.
+				ati = int(ti)
+			}
+
+			tile := p.tiles[ati]
+
+			for y := range 8 {
+				row := tile[y]
+				py := 8*ty + y
+
+				for x := range 8 {
+					px := 8*tx + x
+					cell := row[x]
+					color := DefaultColorPalette[colors[cell]]
+
+					bi := 4 * (py*ScreenWidth + px)
+					for i := range 4 {
+						buffer[bi+i] = color[i]
+					}
+				}
+			}
+		}
+	}
 }
 
 // Reads an address in VRAM. The address must be between [VRAMStart] and [VRAMEnd].
 func (p *PPU) ReadVRAM(addr uint16) uint8 {
 	if addr >= tileSetStart && addr < tileSetEnd {
 		rel := addr - tileSetStart
-		idx := rel / tileSize
-		off := rel % tileSize
+		idx := rel / tileByteSize
+		off := rel % tileByteSize
 		return p.tiles[idx].Read(off)
 	} else if addr >= tileMapStart && addr < tileMapEnd {
 		rel := addr - tileMapStart
@@ -95,8 +151,8 @@ func (p *PPU) ReadVRAM(addr uint16) uint8 {
 func (p *PPU) WriteVRAM(addr uint16, v uint8) {
 	if addr >= tileSetStart && addr < tileSetEnd {
 		rel := addr - tileSetStart
-		idx := rel / tileSize
-		off := rel % tileSize
+		idx := rel / tileByteSize
+		off := rel % tileByteSize
 		p.tiles[idx].Write(off, v)
 	} else if addr >= tileMapStart && addr < tileMapEnd {
 		rel := addr - tileMapStart
