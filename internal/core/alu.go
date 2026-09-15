@@ -3,6 +3,8 @@ package core
 import (
 	"math"
 	"math/bits"
+
+	. "github.com/ongyx/tamago/internal/util"
 )
 
 // An arithmetic logic unit (ALU) provides arithmetic operations to the CPU, setting flags where appropriate.
@@ -209,35 +211,23 @@ func (alu *ALU) Swap(v uint8) uint8 {
 	return r
 }
 
-// Tests a bit by index within the byte. If the bit is not set, the zero flag is set to true.
-func (alu *ALU) TestBit(v uint8, i uint8) {
-	if i > 7 {
-		panic("index must be in the range [0, 7]")
-	}
-
-	r := v & (1 << i)
+// Tests the nth bit in the byte value. If the bit is not set, the zero flag is set to true.
+func (alu *ALU) TestBit(v uint8, n uint8) {
+	r := GetBit(v, n)
 
 	alu.registers.F.Zero = r == 0
 	alu.registers.F.Subtract = false
 	alu.registers.F.HalfCarry = true
 }
 
-// Clears a bit by index within the byte value.
-func (alu *ALU) ClearBit(v uint8, i uint8) uint8 {
-	if i > 7 {
-		panic("index must be in the range [0, 7]")
-	}
-
-	return v &^ (1 << i)
+// Clears the nth bit within the byte value.
+func (alu *ALU) ClearBit(v uint8, n uint8) uint8 {
+	return SetBit(v, n, false)
 }
 
-// Sets a bit by index within the byte value.
-func (alu *ALU) SetBit(v uint8, i uint8) uint8 {
-	if i > 7 {
-		panic("index must be in the range [0, 7]")
-	}
-
-	return v | (1 << i)
+// Sets the nth bit within the byte value.
+func (alu *ALU) SetBit(v uint8, n uint8) uint8 {
+	return SetBit(v, n, true)
 }
 
 // Adjusts the value of register A to be in binary coded decimal (BCD).

@@ -1,5 +1,9 @@
 package core
 
+import (
+	. "github.com/ongyx/tamago/internal/util"
+)
+
 // Contains the general purpose (A, B, C, D, E, H, L, F, PC, SP) registers and special purpose (IE, IF) registers used by the CPU.
 type Registers struct {
 	A uint8
